@@ -21,7 +21,7 @@
     "height": 640
   },
   "last-module-event-record-time": 0,
-  "assets-sort-type": "name",
+  "assets-sort-type": "ext",
   "facebook": {
     "enable": false,
     "appID": "",

@@ -1,11 +1,23 @@
-import game from 'game';
 cc.Class({
     extends: cc.Component,
 
     properties: {
-        playerSpeed: 1,//玩家初始速度
-        moveTime: 0.5,//玩家切换冰道所需要的时间
-        movePos: 20,//玩家每次进行变换冰道所调用距离所调用的距离
+        playerSpeed: {
+            default: 1,
+            tooltip: "玩家的初始速度",
+        },
+        playerMaxSpeed: {
+            default: 5,
+            tooltip: "玩家的最大速度",
+        },
+        moveTime: {
+            default: 0.5,
+            tooltip: "玩家切换冰道所需要的时间"
+        },
+        // curRoad: {
+        //     default: 1,
+        //     tooltip: "当前所在冰道"
+        // },
     },
 
     // LIFE-CYCLE CALLBACKS:
@@ -23,26 +35,60 @@ cc.Class({
     //左转
     leftMove() {
         cc.log("left move")
-        let posx = this.node.x - 20
-        let posy = this.node.y
-        var left = cc.moveBy(this.moveTime, cc.v2(-40, 0))
-        this.node.runAction(left)
+        var roadleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
+        this.road.runAction(roadleft);
+        var enemyleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
+        // var enemyNodes = this.enemy.getComponentsInChildren("enemy");
+        // for (var i = 0; i < enemyNodes.length; i++) {
+        //     var enemyleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
+        //     enemyNodes[i].node.runAction(enemyleft)
+        // }
+        this.enemy.runAction(enemyleft);
+        //this.node.runAction(left);
     },
 
     //右转
     rightMove() {
+        //if (this.curRoad % 2 != 0 && this.curRoad == this.game.road - 1){
+        //cc.log("do not rightMove")
+        //return;
+        //}
         cc.log("right move")
-        let posx = this.node.x - 20
-        let posy = this.node.y
-        var right = cc.moveBy(this.moveTime, cc.v2(40, 0))
-        this.node.runAction(right)
+        // if(this.curRoad == 0){
+
+        // }else if(this.curRoad == 2){
+
+        // }else{
+        //     this.curRoad += 2
+        // }
+        var roadright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
+        this.road.runAction(roadright);
+        var enemyright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
+        //var enemyNodes = this.enemy.getComponentsInChildren("enemy");
+        //for (var i = 0; i < enemyNodes.length; i++) {
+        //var enemyright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
+        //enemyNodes[i].node.runAction(enemyright)
+        //}
+        this.enemy.runAction(enemyright);
+        //this.node.runAction(right);
     },
 
     //减速
-    speedDown() {
-        this.playerSpeed -= 0.5
-        cc.log(this.playerSpeed)
-    }
+    speedDown(event) {
+        cc.log(event.type)
+        //this.playerSpeed -= 1;
+        if (this.playerSpeed <= 0) {
+            this.game.gameOver()
+        }
+    },
 
-    // update (dt) {},
+    update(dt) {
+        if (this.playerSpeed < this.playerMaxSpeed) {
+            this.playerSpeed += 200 * dt;
+        }
+        else {
+            this.playerSpeed = this.playerMaxSpeed;
+        }
+        this.game.updateSpeed();
+    },
 });
