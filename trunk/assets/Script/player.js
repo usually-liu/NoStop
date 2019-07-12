@@ -10,9 +10,18 @@ cc.Class({
             default: 5,
             tooltip: "玩家的最大速度",
         },
+        accel: {
+            default: 300,
+            tooltip: "速度增量",
+        },
         moveTime: {
             default: 0.5,
             tooltip: "玩家切换冰道所需要的时间"
+        },
+        speedButton: {
+            default: null,
+            type: cc.Button,
+            tooltip: "减速按钮",
         },
         // curRoad: {
         //     default: 1,
@@ -23,7 +32,12 @@ cc.Class({
     // LIFE-CYCLE CALLBACKS:
 
     onLoad() {
+        this.b_isAccel = true;//游戏一开始就是加速状态
+        this.speedButton.node.on(cc.Node.EventType.TOUCH_START, this.setSpeedDown, this);
+    },
 
+    onDestroy() {
+        this.speedButton.node.off(cc.Node.EventType.TOUCH_START, this.setSpeedDown, this);
     },
 
     start() {
@@ -35,60 +49,81 @@ cc.Class({
     //左转
     leftMove() {
         cc.log("left move")
-        var roadleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
-        this.road.runAction(roadleft);
-        var enemyleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
-        // var enemyNodes = this.enemy.getComponentsInChildren("enemy");
-        // for (var i = 0; i < enemyNodes.length; i++) {
-        //     var enemyleft = cc.moveBy(this.moveTime, cc.v2(64, 0));
-        //     enemyNodes[i].node.runAction(enemyleft)
-        // }
-        this.enemy.runAction(enemyleft);
-        //this.node.runAction(left);
+        //判断是拐弯还是变换车道
+        if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x > this.node.x) {
+            var leftTurn = cc.rotateBy(0.5, 90)
+            this.game.crossRotation.runAction(leftTurn)
+            var enemyTrun = cc.rotateBy(0.5,90)
+            this.enemy.runAction(enemyTrun);
+            this.game.rotation += 90
+        }
+        else {
+            var roadmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+            this.road.runAction(roadmove);
+            var enemymove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+            this.enemy.runAction(enemymove);
+            var crossmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+            this.game.crossFather.runAction(crossmove);
+        }
     },
 
     //右转
     rightMove() {
-        //if (this.curRoad % 2 != 0 && this.curRoad == this.game.road - 1){
-        //cc.log("do not rightMove")
-        //return;
-        //}
-        cc.log("right move")
-        // if(this.curRoad == 0){
+        cc.log("right")
+        //判断是拐弯还是变换车道
+        if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x < this.node.x) {
+            var rightTurn = cc.rotateBy(this.moveTime, -90)
+            this.game.crossRotation.runAction(rightTurn)
+            var enemyTrun = cc.rotateBy(0.5,-90)
+            this.enemy.runAction(enemyTrun);
+            this.game.rotation -= 90
+        }
+        else {
+            var roadmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+            this.road.runAction(roadmove);
+            var enemymove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+            this.enemy.runAction(enemymove);
+            var crossmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+            this.game.crossFather.runAction(crossmove);
+        }
+        //var rightTurn = cc.rotateBy(0.5,90)
+        //this.game.crossRotation.runAction(rightTurn);
+        // var roadTurn = cc.rotateBy(0.5,90);
+        // this.road.runAction(roadTurn);
+        // var enemyTurn = cc.rotateBy(0.5,90);
+        // this.enemy.runAction(enemyTurn)
+    },
 
-        // }else if(this.curRoad == 2){
-
-        // }else{
-        //     this.curRoad += 2
-        // }
-        var roadright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
-        this.road.runAction(roadright);
-        var enemyright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
-        //var enemyNodes = this.enemy.getComponentsInChildren("enemy");
-        //for (var i = 0; i < enemyNodes.length; i++) {
-        //var enemyright = cc.moveBy(this.moveTime, cc.v2(-64, 0));
-        //enemyNodes[i].node.runAction(enemyright)
-        //}
-        this.enemy.runAction(enemyright);
-        //this.node.runAction(right);
+    /**
+     * 设定减速
+     */
+    setSpeedDown(event) {
+        cc.log("set speedDown")
+        this.b_isAccel = false;//点击按钮后变为减速状态
     },
 
     //减速
     speedDown(event) {
-        cc.log(event.type)
+        cc.log("seppd up")
+        this.b_isAccel = true;
         //this.playerSpeed -= 1;
-        if (this.playerSpeed <= 0) {
-            this.game.gameOver()
-        }
     },
 
     update(dt) {
-        if (this.playerSpeed < this.playerMaxSpeed) {
-            this.playerSpeed += 200 * dt;
+        if (this.b_isAccel == false) {
+            //点击减速按钮时设置减速状态
+            this.playerSpeed -= this.accel * dt
+            //当速度为0时结束游戏
+            if (this.playerSpeed <= 0) {
+                this.game.gameOver();
+            }
         }
         else {
-            this.playerSpeed = this.playerMaxSpeed;
+            //未点击时自动加速
+            this.playerSpeed += this.accel * dt
+            if (this.playerSpeed > this.playerMaxSpeed) {
+                this.playerSpeed = this.playerMaxSpeed
+            }
         }
-        this.game.updateSpeed();
     },
 });

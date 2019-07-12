@@ -3,7 +3,7 @@
   "_name": "player Move",
   "_objFlags": 0,
   "_native": "",
-  "_duration": 0.15,
+  "_duration": 0.08333333333333333,
   "sample": 60,
   "speed": 0.1,
   "wrapMode": 1,
@@ -14,31 +14,19 @@
           {
             "frame": 0,
             "value": {
-              "__uuid__": "e7c0f50e-112b-4fab-998f-e5ba012e9c28"
+              "__uuid__": "bdb18431-5a05-4a7d-960c-4d41bfb8eb77"
             }
           },
           {
             "frame": 0.03333333333333333,
             "value": {
-              "__uuid__": "2ec038ce-8650-408c-8ab5-77219992f5a9"
+              "__uuid__": "bdb18431-5a05-4a7d-960c-4d41bfb8eb77"
             }
           },
           {
             "frame": 0.06666666666666667,
             "value": {
-              "__uuid__": "ce81392b-6b65-4ccd-b1fd-521ebbe93116"
-            }
-          },
-          {
-            "frame": 0.1,
-            "value": {
-              "__uuid__": "b6267414-276f-4cb6-91be-55d2aecaaa46"
-            }
-          },
-          {
-            "frame": 0.13333333333333333,
-            "value": {
-              "__uuid__": "68d9d276-fc02-437a-96d0-ba8099336e87"
+              "__uuid__": "bdb18431-5a05-4a7d-960c-4d41bfb8eb77"
             }
           }
         ]

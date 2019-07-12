@@ -19,6 +19,22 @@ cc.Class({
             default: null,
             type: cc.Prefab,
         },
+        //十字路口用节点
+        crossFather: {
+            default: null,
+            type: cc.Node,
+            tooltip: "十字路口父节点",
+        },
+        cross: {
+            default: null,
+            type: cc.Node,
+            tooltip: "十字路口"
+        },
+        crossRotation: {
+            default: null,
+            type: cc.Node,
+            tooltip: "十字路口旋转用节点"
+        },
         //NPC的节点,用于放置NPC
         enemy: {
             default: null,
@@ -68,7 +84,10 @@ cc.Class({
     onLoad() {
         cc.director.resume()
         this.diff = 0;//初始化游戏的经过地图数量,用于划分难度
+        this.dis = 0;//初始化移动的距离,用于判断道路生成及其他内容
         this.playerScript = this.player.getComponent("player");
+        //初始化当前旋转角度,用于设置敌人的移动方向
+        this.rot = 0;
         //将节点对象赋予玩家类
         this.playerScript.game = this;
         this.playerScript.enemy = this.enemy;
@@ -86,19 +105,62 @@ cc.Class({
 
     start() {
         //生成初始冰道
-        this.createRoad('vertical', this.roadNum, true)
+        this.createRoad('vertical', this.roadNum, true);
+        this.createNewRoad();
+        //this.createRoad('vertical', this.roadNum, false)
         //生成初始冰道  
-        this.createRoad('vertical', this.roadNum, false)
-        //设置速度
-        this.updateSpeed();
+        //this.createRoad('cross', this.roadNum, false)
         //每间隔一定时间进行地图刷新
         //this.scheduleUpdateForTarget()
     },
 
     update(dt) {
 
-        this.bgMove(this.far_bg, dt);
+        //this.bgMove(this.far_bg, dt);
+        var movedis = this.playerScript.playerSpeed * dt;
+        this.dis += movedis;
+        if (this.dis >= this.player.height) {
+            this.diff += 1;
+            this.createNewRoad();
+            if (this.diff % 25 == 0)
+                this.createCross();
+            this.dis = 0;;
+        }
+        // if (this.cross.active == true) {
+            this.cross.y -= movedis;
+            // if (this.cross.y <= -960)
+            //     this.cross.active = false
+        // }
 
+    },
+
+    /**
+     * 创建新道路
+     */
+    createNewRoad() {
+
+        var nodeW = this.roadPrefab.data.width;
+        var nodeH = this.roadPrefab.data.height;
+        for (var i = 1; i <= this.roadNum; i++) {
+            var posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+            var posy = cc.winSize.height / 2 + nodeH / 2 + 160;
+            var newRoad = cc.instantiate(this.roadPrefab);
+            newRoad.getComponent('road').game = this;
+            this.road.addChild(newRoad);
+            newRoad.setPosition(cc.v2(posx, posy));
+        }
+    },
+
+    /**
+     * 创建十字路口
+     */
+    createCross() {
+        // cc.log(this.cross.getNumberOfRunningActions())
+        // if (this.cross.getNumberOfRunningActions() > 0) {
+        //     return;
+        // }
+        //this.cross.active = true;
+        this.cross.setPosition(cc.v2(0, 960));
     },
 
     /**
@@ -108,26 +170,37 @@ cc.Class({
      */
     bgMove(bgList = this.far_bg, dt) {
 
-        //每次循环二张图片一起滚动
-
-        for (let index = 0; index < bgList.length; index++) {
-
-            bgList[index].y -= this.playerScript.playerSpeed * dt;
-
-            if (bgList[index].y <= -1 * bgList[0].height) {
-                bgList[index].y = 960;//离开场景后将此背景图的y重新赋值，位于场景的上方
-                this.diff += 1;
-                if (this.diff % 5 == 0) {
-                    var numArray = [3, 5]
-                    this.roadNum = numArray[Math.floor((Math.random() * 2))];
-                }
-                this.createRoad('vertical', this.roadNum, false)//根据难度生成新的冰道
-                if (this.diff % 2 == 0) {
-                    this.createEnemy()//根据难度生成敌人
-                }
+        var movedis = this.playerScript.playerSpeed * dt;
+        this.dis += movedis
+        if (this.dis > cc.winSize.height) {
+            this.diff += 1;
+            if (this.diff % 5 == 0) {
+                var numArray = [3, 5]
+                this.roadNum = numArray[Math.floor((Math.random() * 2))];
             }
-
+            this.createRoad('vertical', this.roadNum, false)//根据难度生成新的冰道
+            this.dis = 0;
         }
+
+        //每次循环二张图片一起滚动
+        // for (let index = 0; index < bgList.length; index++) {
+
+        //     bgList[index].y -= dis;
+
+        //     if (bgList[index].y < -1 * bgList[index].height) {
+        //         bgList[index].y = 960 - dis;//离开场景后将此背景图的y重新赋值，位于场景的上方
+        //         this.diff += 1;
+        //         if (this.diff % 5 == 0) {
+        //             var numArray = [3, 5]
+        //             this.roadNum = numArray[Math.floor((Math.random() * 2))];
+        //         }
+        //         this.createRoad('vertical', this.roadNum, false)//根据难度生成新的冰道
+        //         if (this.diff % 2 == 0) {
+        //             this.createEnemy()//根据难度生成敌人
+        //         }
+        //     }
+
+        // }
 
         //根据地图移动的距离加分
         this.scoreTime += this.playerScript.playerSpeed * dt;
@@ -154,16 +227,17 @@ cc.Class({
 
         var nodeW = this.roadPrefab.data.width;
         var nodeH = this.roadPrefab.data.height;
-
+        //纵向车道
         if (type == 'vertical') {
             var roadIndex = cc.winSize.height / nodeH;
             for (var i = 1; i <= roadNum; i++) {
                 for (var j = 1; j <= roadIndex; j++) {
                     var posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
-                    var posy = j % 2 == 0 ? -1 * ((j - 1) / 2) * nodeH : (j / 2) * nodeH;
-                    if (b_isFirst == false) {
-                        posy += 960;
-                    }
+                    var posy = j % 2 == 0 ? -1 * ((j - 2) / 2) * nodeH : (j / 2 - 0.5) * nodeH;
+                    // if (b_isFirst == false) {
+                    //     posy += this.far_bg[0].height;
+                    // }
+                    posy += 240
                     var newRoad = cc.instantiate(this.roadPrefab);
                     newRoad.getComponent('road').game = this;
                     this.road.addChild(newRoad);
@@ -171,10 +245,44 @@ cc.Class({
                 }
             }
 
-        } else if (type == 'cross') {
-
         }
+        //十字路口
+        else if (type == 'cross') {
+            //创建移动用子节点
 
+            //创建旋转用子节点
+
+            //创建预设在旋转用子节点上
+            var roadIndex = cc.winSize.height / nodeH;
+            //绘制纵向道路
+            for (var i = 1; i <= roadNum; i++) {
+                for (var j = 1; j <= roadIndex + 1; j++) {
+                    var posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+                    var posy = j % 2 == 0 ? -1 * (j / 2) * nodeH : (j / 2 - 0.5) * nodeH;
+                    if (b_isFirst == false) {
+                        posy += this.far_bg[0].height;
+                    }
+                    var newRoad = cc.instantiate(this.roadPrefab);
+                    newRoad.getComponent('road').game = this;
+                    this.road.addChild(newRoad);
+                    newRoad.setPosition(cc.v2(posx, posy));
+                }
+            }
+            //绘制横向道路
+            for (var k = roadNum + 1; k <= roadIndex + 1; k++) {
+                for (var l = 1; l <= roadNum; l++) {
+                    var posx = k % 2 == 0 ? -1 * ((k - 1) / 2) * nodeW - (0.5 * nodeW) : (k / 2) * nodeW - (0.5 * nodeW);
+                    var posy = l % 2 == 0 ? -1 * (l / 2) * nodeH : (l / 2 - 0.5) * nodeH;
+                    if (b_isFirst == false) {
+                        posy += this.far_bg[0].height;
+                    }
+                    var newRoad = cc.instantiate(this.roadPrefab);
+                    newRoad.getComponent('road').game = this;
+                    this.road.addChild(newRoad);
+                    newRoad.setPosition(cc.v2(posx, posy));
+                }
+            }
+        }
     },
 
     /**
@@ -191,13 +299,6 @@ cc.Class({
         newEnemy.getComponent('enemy').game = this;
         this.enemy.addChild(newEnemy);
         newEnemy.setPosition(cc.v2(posx, posy));
-    },
-
-    /**
-     * 更新当前速度
-     */
-    updateSpeed() {
-        this.speedLabel.string = "speed:" + this.playerScript.playerSpeed / 10;
     },
 
     /**
