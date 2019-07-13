@@ -15,7 +15,7 @@ cc.Class({
             tooltip: "速度增量",
         },
         moveTime: {
-            default: 0.5,
+            default: 1,
             tooltip: "玩家切换冰道所需要的时间"
         },
         speedButton: {
@@ -51,11 +51,17 @@ cc.Class({
         cc.log("left move")
         //判断是拐弯还是变换车道
         if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x > this.node.x) {
-            var leftTurn = cc.rotateBy(0.5, 90)
+            var leftTurn = cc.rotateBy(this.moveTime, 90)
             this.game.crossRotation.runAction(leftTurn)
-            var enemyTrun = cc.rotateBy(0.5,90)
+            var enemyTrun = cc.rotateBy(this.moveTime, 90)
             this.enemy.runAction(enemyTrun);
-            this.game.rotation += 90
+            // var children = this.enemy.children
+            // for (var i = 0; i < children.length; ++i) {
+            //     var enemyChild = children[i].getComponent("enemy");
+            //     enemyChild.setTurn();
+            // }
+            this.game.rot += 90
+            cc.log("rotation = " + this.game.rot)
         }
         else {
             var roadmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
@@ -74,9 +80,15 @@ cc.Class({
         if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x < this.node.x) {
             var rightTurn = cc.rotateBy(this.moveTime, -90)
             this.game.crossRotation.runAction(rightTurn)
-            var enemyTrun = cc.rotateBy(0.5,-90)
+            var enemyTrun = cc.rotateBy(this.moveTime, -90)
             this.enemy.runAction(enemyTrun);
-            this.game.rotation -= 90
+            // var children = this.enemy.children
+            // for (var i = 0; i < children.length; ++i) {
+            //     var enemyChild = children[i].getComponent("enemy");
+            //     enemyChild.setTurn();
+            // }
+            this.game.rot -= 90
+            cc.log("rotation = " + this.game.rot)
         }
         else {
             var roadmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));

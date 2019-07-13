@@ -87,7 +87,7 @@ cc.Class({
         this.dis = 0;//初始化移动的距离,用于判断道路生成及其他内容
         this.playerScript = this.player.getComponent("player");
         //初始化当前旋转角度,用于设置敌人的移动方向
-        this.rot = 0;
+        this.rot = this.enemy.getRotation();
         //将节点对象赋予玩家类
         this.playerScript.game = this;
         this.playerScript.enemy = this.enemy;
@@ -107,6 +107,7 @@ cc.Class({
         //生成初始冰道
         this.createRoad('vertical', this.roadNum, true);
         this.createNewRoad();
+        this.createEnemy();
         //this.createRoad('vertical', this.roadNum, false)
         //生成初始冰道  
         //this.createRoad('cross', this.roadNum, false)
@@ -124,12 +125,14 @@ cc.Class({
             this.createNewRoad();
             if (this.diff % 25 == 0)
                 this.createCross();
+            if (this.diff % 20 == 0)
+                this.createEnemy();
             this.dis = 0;;
         }
         // if (this.cross.active == true) {
-            this.cross.y -= movedis;
-            // if (this.cross.y <= -960)
-            //     this.cross.active = false
+        this.cross.y -= movedis;
+        // if (this.cross.y <= -960)
+        //     this.cross.active = false
         // }
 
     },
@@ -223,7 +226,7 @@ cc.Class({
             return
         }
 
-        cc.log("create road")
+        //cc.log("create road")
 
         var nodeW = this.roadPrefab.data.width;
         var nodeH = this.roadPrefab.data.height;
@@ -289,12 +292,17 @@ cc.Class({
      * 生成敌人(NPC) 
      */
     createEnemy() {
-        cc.log("create enemy")
+        //cc.log("create enemy")
 
         var nodeW = this.roadPrefab.data.width;
-        var Index = Math.floor((Math.random() * this.roadNum));
-        var posx = Index % 2 == 0 ? -1 * ((Index - 1) / 2) * nodeW - (0.5 * nodeW) : (Index / 2) * nodeW - (0.5 * nodeW);
-        var posy = 480;
+        // var Index = Math.floor((Math.random() * this.roadNum));
+        var Index = 0
+        var posx = 0;
+        var posy = 0;
+        var rot = this.enemy.getRotation() * Math.PI / 180;
+        posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * 720
+        posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * 720
+        cc.log(posx, posy);
         var newEnemy = cc.instantiate(this.enemyPrefab);
         newEnemy.getComponent('enemy').game = this;
         this.enemy.addChild(newEnemy);

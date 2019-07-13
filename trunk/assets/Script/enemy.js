@@ -13,27 +13,38 @@ cc.Class({
 
     onLoad() {
         if (this.game.diff >= 0) {
+            //设置初始随机速度
+            var speedRandom = Math.floor((Math.random() * 100)) + 100
             //获取最初始的旋转角度
             this.rot = this.game.rot;
+            this.node.setRotation(-1 * this.rot)
+            cc.log("rotation= " + this.rot)
             //根据旋转角度决定最初的移动方向
-            if (this.rot % 360 == 0) {
-                this.speedx = 0;
-                this.speedy = Math.floor((Math.random() * 200)) + 100;
-            }
-            else if (this.rot % 270 == 0) {
-                this.speedx = Math.floor((Math.random() * 200)) + 100;
-                this.speedy = 0;
-            }
-            else if (this.rot % 180 == 0) {
-                this.speedx = 0;
-                this.speedy = -1 * (Math.floor((Math.random() * 200)) + 100);
-            }
-            else if (this.rot % 90 == 0) {
-                this.speedx = -1 * (Math.floor((Math.random() * 200)) + 100);
-                this.speedy = 0
-            }
-
+            this.speedx = -1 * Math.sin(this.rot * Math.PI / 180) * speedRandom
+            this.speedy = Math.cos(this.rot * Math.PI / 180) * speedRandom
+            // if (this.rot % 360 == 0) {
+            //     this.speedx = 0;
+            //     this.speedy = speedRandom;
+            // }
+            // else if (this.rot % 270 == 0) {
+            //     this.speedx = this.rot > 0 ? speedRandom : -1 * speedRandom;
+            //     this.speedy = 0;
+            // }
+            // else if (this.rot % 180 == 0) {
+            //     this.speedx = 0;
+            //     this.speedy = -1 * speedRandom;
+            // }
+            // else if (this.rot % 90 == 0) {
+            //     this.speedx = this.rot > 0 ? -1 * speedRandom : speedRandom;
+            //     this.speedy = 0
+            // }
         }
+
+        // var posx = this.speedx == 0 ? 0 : this.speedx > 0 ? this.speedx - this.game.playerScript.playerSpeed : this.speedx + this.game.playerScript.playerSpeed;
+        // var posy = this.speedy == 0 ? 0 : this.speedy > 0 ? this.speedy - this.game.playerScript.playerSpeed : this.speedy + this.game.playerScript.playerSpeed;
+        // cc.log("speedx:" + this.speedx + " speedy:" + this.speedy + " playerSpeed:" + this.game.playerScript.playerSpeed)
+        // cc.log(posx, posy);
+
     },
 
     getPlayerDistance() {
@@ -52,8 +63,9 @@ cc.Class({
      * 判断节点是否移出屏幕
      */
     isOutOfWindow() {
-        var posx, posy = this.node.getPosition();
-        if (posx < -1 * cc.winSize.height || posx > cc.winSize.height || posy < -1 * cc.winSize.height || posy > cc.winSize.height) {
+        var posx = this.node.getPosition().x;
+        var posy = this.node.getPosition().y;
+        if (posx < -1.1 * cc.winSize.height || posx > 1.1 * cc.winSize.height || posy < -1.1 * cc.winSize.height || posy > 1.1 * cc.winSize.height) {
             return true;
         }
         else {
@@ -76,25 +88,35 @@ cc.Class({
 
         if (this.b_isOnside == false) {
             //判断当前状态是否是已经转弯的状态
-            if (this.rot == this.node.parent.rotation) {
-                this.speedx = this.speedx == 0 ? 0 : this.speedx + this.game.playerScript.playerSpeed;
-                this.speedy = this.speedy == 0 ? 0 : this.speedy + this.game.playerScript.playerSpeed;
-            }
-            else {
-                if (this.rot > this.node.parent.rotation) {
-                    this.speedx = this.speedx == 0 ? -1 * this.game.playerScript.playerSpeed : this.speedx;
-                    this.speedy = this.speedy == 0 ? -1 * this.game.playerScript.playerSpeed : this.speedy;
-                }
-                else {
-                    
-                }
-            }
-            this.node.x += this.speedx * dt;
-            this.node.y += this.speedy * dt;
+            var posx = 0;
+            var posy = 0;
+            var playerSpeed = this.game.playerScript.playerSpeed;
+            var parentRotiation = this.node.parent.getRotation();
+            posx = this.speedx + Math.sin(parentRotiation * Math.PI / 180) * playerSpeed;
+            posy = this.speedy - Math.cos(parentRotiation * Math.PI / 180) * playerSpeed;
+            //cc.log("posx = " + posx + " posy = " + posy + "rot = " + this.rot + " parentrot = " + parentRotiation)
+            this.node.x += posx * dt;
+            this.node.y += posy * dt;
+            //cc.log("speedx = " + this.speedx + " speedy = " + this.speedy)
+            //cc.log("x:" + this.node.y + " y:" + this.node.y)
         }
 
-        if (this.isOutOfWindow() == ture) {
+        if (this.isOutOfWindow() == true) {
+            cc.log("destroy")
             this.node.destroy();
         }
+    },
+
+    getPos() {
+
+    },
+
+    /**
+     * 设置拐弯,调整速度
+     */
+    setTurn() {
+        cc.log("set turn");
+        //this.speedx = -1 * this.speedx;
+        //this.speedy = -1 * this.speedy;
     },
 });
