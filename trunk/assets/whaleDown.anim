@@ -1,0 +1,97 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "whaleDown",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 1,
+  "sample": 60,
+  "speed": 1,
+  "wrapMode": 1,
+  "curveData": {
+    "paths": {
+      "child": {
+        "props": {
+          "position": [
+            {
+              "frame": 0,
+              "value": [
+                0,
+                300
+              ]
+            },
+            {
+              "frame": 1,
+              "value": [
+                0,
+                10
+              ],
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            }
+          ]
+        }
+      },
+      "whale/Animal": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 1
+            },
+            {
+              "frame": 1,
+              "value": 0.4,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            }
+          ]
+        }
+      },
+      "whale/water": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 0.5
+            },
+            {
+              "frame": 1,
+              "value": 0,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            }
+          ],
+          "y": [
+            {
+              "frame": 0,
+              "value": 227
+            },
+            {
+              "frame": 1,
+              "value": 100,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "events": []
+}

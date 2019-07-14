@@ -1,0 +1,97 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "whale",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 1.25,
+  "sample": 60,
+  "speed": 1,
+  "wrapMode": 1,
+  "curveData": {
+    "paths": {
+      "child": {
+        "props": {
+          "position": [
+            {
+              "frame": 0,
+              "value": [
+                0,
+                10
+              ],
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            },
+            {
+              "frame": 1.25,
+              "value": [
+                0,
+                300
+              ]
+            }
+          ]
+        }
+      },
+      "whale/Animal": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 0.4,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            },
+            {
+              "frame": 1.25,
+              "value": 1
+            }
+          ]
+        }
+      },
+      "whale/water": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 0,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            },
+            {
+              "frame": 1.25,
+              "value": 0.5
+            }
+          ],
+          "y": [
+            {
+              "frame": 0,
+              "value": 100,
+              "curve": [
+                0.18,
+                0.89,
+                0.31,
+                1.21
+              ]
+            },
+            {
+              "frame": 1.25,
+              "value": 227
+            }
+          ]
+        }
+      }
+    }
+  },
+  "events": []
+}

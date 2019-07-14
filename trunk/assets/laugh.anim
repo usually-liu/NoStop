@@ -1,0 +1,72 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "laugh",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 0.43333333333333335,
+  "sample": 60,
+  "speed": 1,
+  "wrapMode": 1,
+  "curveData": {
+    "paths": {
+      "whale/water": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 0.5
+            }
+          ],
+          "y": [
+            {
+              "frame": 0,
+              "value": 227
+            }
+          ]
+        }
+      },
+      "whale/Animal": {
+        "props": {
+          "scaleY": [
+            {
+              "frame": 0,
+              "value": 1
+            }
+          ]
+        },
+        "comps": {
+          "cc.Sprite": {
+            "spriteFrame": [
+              {
+                "frame": 0,
+                "value": {
+                  "__uuid__": "d32fb03f-bfbe-4122-a1f6-3c16a7918f8c"
+                }
+              },
+              {
+                "frame": 0.4166666666666667,
+                "value": {
+                  "__uuid__": "d32fb03f-bfbe-4122-a1f6-3c16a7918f8c"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "child": {
+        "props": {
+          "position": [
+            {
+              "frame": 0,
+              "value": [
+                0,
+                300
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "events": []
+}
