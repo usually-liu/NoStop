@@ -22,22 +22,6 @@ cc.Class({
             //根据旋转角度决定最初的移动方向
             this.speedx = -1 * Math.sin(this.rot * Math.PI / 180) * speedRandom
             this.speedy = Math.cos(this.rot * Math.PI / 180) * speedRandom
-            // if (this.rot % 360 == 0) {
-            //     this.speedx = 0;
-            //     this.speedy = speedRandom;
-            // }
-            // else if (this.rot % 270 == 0) {
-            //     this.speedx = this.rot > 0 ? speedRandom : -1 * speedRandom;
-            //     this.speedy = 0;
-            // }
-            // else if (this.rot % 180 == 0) {
-            //     this.speedx = 0;
-            //     this.speedy = -1 * speedRandom;
-            // }
-            // else if (this.rot % 90 == 0) {
-            //     this.speedx = this.rot > 0 ? -1 * speedRandom : speedRandom;
-            //     this.speedy = 0
-            // }
         }
 
         // var posx = this.speedx == 0 ? 0 : this.speedx > 0 ? this.speedx - this.game.playerScript.playerSpeed : this.speedx + this.game.playerScript.playerSpeed;

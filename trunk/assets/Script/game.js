@@ -45,7 +45,21 @@ cc.Class({
             default: null,
             type: cc.Prefab,
         },
-
+        point:{
+            default:null,
+            type:cc.Node,
+            tooltip:"得分点和考察站节点"
+        },
+        scorePrefab:{
+            default:null,
+            type:cc.Prefab,
+            tooltip:"得分点预设"
+        },
+        itemPrefab:{
+            default:null,
+            type:cc.Prefab,
+            tooltip:"考察站预设"
+        },
         //玩家节点数据,用于碰撞判断及当前的坐标判断
         player: {
             default: null,
@@ -127,6 +141,8 @@ cc.Class({
                 this.createCross();
             if (this.diff % 20 == 0)
                 this.createEnemy();
+            if (this.diff % 50 == 0)
+                
             this.dis = 0;;
         }
         // if (this.cross.active == true) {
@@ -163,6 +179,7 @@ cc.Class({
         //     return;
         // }
         //this.cross.active = true;
+        this.cross.setRotatin(0);
         this.cross.setPosition(cc.v2(0, 960));
     },
 
@@ -307,6 +324,13 @@ cc.Class({
         newEnemy.getComponent('enemy').game = this;
         this.enemy.addChild(newEnemy);
         newEnemy.setPosition(cc.v2(posx, posy));
+    },
+    
+    /**
+     * 创建得分点
+     */
+    createScorePoint(){
+
     },
 
     /**
