@@ -24,7 +24,7 @@ cc.Class({
 
     roadMove(dt) {
         this.node.y -= this.game.playerScript.playerSpeed * dt;
-        if (this.node.y <= -cc.winSize.height / 2 - 32) {
+        if (this.node.y <= -1 * Math.floor(cc.winSize.height) / 2 - 32) {
             this.node.destroy();
         }
     },

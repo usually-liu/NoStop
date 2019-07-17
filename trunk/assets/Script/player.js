@@ -32,7 +32,9 @@ cc.Class({
     // LIFE-CYCLE CALLBACKS:
 
     onLoad() {
+        this.curRoad = 0; //玩家所处的初始道路
         this.b_isAccel = true;//游戏一开始就是加速状态
+        this.b_isTurn = false;//玩家是否已经拐弯
         this.speedButton.node.on(cc.Node.EventType.TOUCH_START, this.setSpeedDown, this);
     },
 
@@ -51,25 +53,29 @@ cc.Class({
         cc.log("left move")
         //判断是拐弯还是变换车道
         if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x > this.node.x) {
-            var leftTurn = cc.rotateBy(this.moveTime, 90)
-            this.game.crossRotation.runAction(leftTurn)
-            var enemyTrun = cc.rotateBy(this.moveTime, 90)
-            this.enemy.runAction(enemyTrun);
-            // var children = this.enemy.children
-            // for (var i = 0; i < children.length; ++i) {
-            //     var enemyChild = children[i].getComponent("enemy");
-            //     enemyChild.setTurn();
-            // }
-            this.game.rot += 90
-            cc.log("rotation = " + this.game.rot)
+            if (this.b_isTurn == false){
+                var leftTurn = cc.rotateBy(this.moveTime, 90)
+                this.game.crossRotation.runAction(leftTurn)
+                var enemyTrun = cc.rotateBy(this.moveTime, 90)
+                this.enemy.runAction(enemyTrun);
+                this.game.rot += 90
+                this.b_isTurn = true;
+            }
+            // cc.log("rotation = " + this.game.rot)
         }
         else {
-            var roadmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
-            this.road.runAction(roadmove);
-            var enemymove = cc.moveBy(this.moveTime, cc.v2(100, 0));
-            this.enemy.runAction(enemymove);
-            var crossmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
-            this.game.crossFather.runAction(crossmove);
+            if (this.curRoad > -1) {
+                var pointmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+                this.point.runAction(pointmove);
+                var roadmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+                this.road.runAction(roadmove);
+                var enemymove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+                this.enemy.runAction(enemymove);
+                var crossmove = cc.moveBy(this.moveTime, cc.v2(100, 0));
+                this.game.crossFather.runAction(crossmove);
+                this.curRoad -= 1
+            }
+
         }
     },
 
@@ -78,32 +84,30 @@ cc.Class({
         cc.log("right")
         //判断是拐弯还是变换车道
         if (this.game.cross.y - this.node.y < 160 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x < this.node.x) {
-            var rightTurn = cc.rotateBy(this.moveTime, -90)
-            this.game.crossRotation.runAction(rightTurn)
-            var enemyTrun = cc.rotateBy(this.moveTime, -90)
-            this.enemy.runAction(enemyTrun);
-            // var children = this.enemy.children
-            // for (var i = 0; i < children.length; ++i) {
-            //     var enemyChild = children[i].getComponent("enemy");
-            //     enemyChild.setTurn();
-            // }
-            this.game.rot -= 90
-            cc.log("rotation = " + this.game.rot)
+            if (this.b_isTurn == false){
+                var rightTurn = cc.rotateBy(this.moveTime, -90);
+                this.game.crossRotation.runAction(rightTurn);
+                var enemyTrun = cc.rotateBy(this.moveTime, -90);
+                this.enemy.runAction(enemyTrun);
+                this.game.rot -= 90;
+                this.b_isTurn = true;
+            }
+            // cc.log("rotation = " + this.game.rot)
         }
         else {
-            var roadmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
-            this.road.runAction(roadmove);
-            var enemymove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
-            this.enemy.runAction(enemymove);
-            var crossmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
-            this.game.crossFather.runAction(crossmove);
+            if (this.curRoad < 1) {
+                var pointmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+                this.point.runAction(pointmove);
+                var roadmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+                this.road.runAction(roadmove);
+                var enemymove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+                this.enemy.runAction(enemymove);
+                var crossmove = cc.moveBy(this.moveTime, cc.v2(-100, 0));
+                this.game.crossFather.runAction(crossmove);
+                this.curRoad += 1;
+            }
+
         }
-        //var rightTurn = cc.rotateBy(0.5,90)
-        //this.game.crossRotation.runAction(rightTurn);
-        // var roadTurn = cc.rotateBy(0.5,90);
-        // this.road.runAction(roadTurn);
-        // var enemyTurn = cc.rotateBy(0.5,90);
-        // this.enemy.runAction(enemyTurn)
     },
 
     /**
@@ -119,6 +123,13 @@ cc.Class({
         cc.log("seppd up")
         this.b_isAccel = true;
         //this.playerSpeed -= 1;
+    },
+
+    /**
+     * 重置拐弯状态
+     */
+    resetTurnState(){
+        this.b_isTurn = false;
     },
 
     update(dt) {

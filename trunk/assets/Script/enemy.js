@@ -49,7 +49,7 @@ cc.Class({
     isOutOfWindow() {
         var posx = this.node.getPosition().x;
         var posy = this.node.getPosition().y;
-        if (posx < -1.1 * cc.winSize.height || posx > 1.1 * cc.winSize.height || posy < -1.1 * cc.winSize.height || posy > 1.1 * cc.winSize.height) {
+        if (posx < -1.1 * Math.floor(cc.winSize.height) || posx > 1.1 * Math.floor(cc.winSize.height) || posy < -1.1 * Math.floor(cc.winSize.height) || posy > 1.1 * Math.floor(cc.winSize.height)) {
             return true;
         }
         else {

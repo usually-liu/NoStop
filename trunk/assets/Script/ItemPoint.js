@@ -3,7 +3,7 @@ cc.Class({
 
     properties: {
         pickRadius: {
-            default: 30,
+            default: 50,
             tooltip: "碰撞距离",
         },
     },
@@ -32,7 +32,7 @@ cc.Class({
 
     update(dt) {
         if (this.getPlayerDistance() < this.pickRadius && this.b_isPicRadius == false) {
-            this.game.gainScore();
+            this.game.jumpTotips();
             this.b_isPicRadius = true;
         }
 

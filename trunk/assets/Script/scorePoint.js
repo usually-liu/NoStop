@@ -30,10 +30,30 @@ cc.Class({
         return dist;
     },
 
+    /**
+     * 判断节点是否移出屏幕
+     */
+    isOutOfWindow() {
+        var posx = this.node.getPosition().x;
+        var posy = this.node.getPosition().y;
+        if (posx < -1.1 * Math.floor(cc.winSize.height) || posx > 1.1 * Math.floor(cc.winSize.height) || posy < -1.1 * Math.floor(cc.winSize.height) || posy > 1.1 * Math.floor(cc.winSize.height)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    },
+
     update (dt) {
+        if(this.isOutOfWindow() == true){
+            cc.log("destory ScorePoint")
+            this.node.destroy();
+            return;
+        }
+
         if (this.getPlayerDistance() < this.pickRadius && this.b_isPicRadius == false) {
-            //进入获得物品界面
-            this.game.jumpToItem();
+            //添加得分
+            this.game.gainScore(10);
             this.b_isPicRadius = true;
         }
 
