@@ -103,6 +103,8 @@ cc.Class({
 
     onLoad() {
         cc.director.resume()
+        //初始化对象池
+        this.initPool();
         this.diff = 0;//初始化游戏的经过地图数量,用于划分难度
         this.dis = 0;//初始化移动的距离,用于判断道路生成及其他内容
         //将节点对象赋予玩家类
@@ -118,10 +120,17 @@ cc.Class({
         this.scoreTime = 0;//获取得分的计数
         //开始游戏前初始化所有动作
         this.buttonRestart.active = false;
+        //初始化道路的对象池
+
+        //初始化敌人的对象池
+
+        //初始化道具的对象池
+
     },
 
     onDestroy() {
-
+        //切换场景时清除对象池
+        this.clearPool();
     },
 
     start() {
@@ -161,17 +170,33 @@ cc.Class({
     },
 
     /**
+     * 初始化对象池
+     */
+    initPool() {
+        //初始化道路用对象池
+        this.roadPool = new cc.NodePool();
+        let initCount = (Math.floor(cc.winSize.height) / this.roadPrefab.data.height + 2) * this.roadNum
+        for (let i = 0;i<initCount;i++){
+            let newroad = cc.instantiate(this.roadPrefab);
+            this.roadPool.put(newroad);
+        }
+        //初始化敌人用对象池
+
+        //初始化道具用对象池
+    },
+
+    /**
      * 创建新道路
      */
     createNewRoad() {
 
-        let width = Math.floor(cc.winSize.height / 2) 
-        var nodeW = this.roadPrefab.data.width;
-        var nodeH = this.roadPrefab.data.height;
-        for (var i = 1; i <= this.roadNum; i++) {
-            var posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
-            var posy = width + nodeH / 2 + 160;
-            var newRoad = cc.instantiate(this.roadPrefab);
+        let width = Math.floor(cc.winSize.height / 2)
+        let nodeW = this.roadPrefab.data.width;
+        let nodeH = this.roadPrefab.data.height;
+        for (let i = 1; i <= this.roadNum; i++) {
+            let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+            let posy = width + nodeH / 2 + 160;
+            let newRoad = cc.instantiate(this.roadPrefab);
             newRoad.getComponent('road').game = this;
             this.road.addChild(newRoad);
             newRoad.setPosition(cc.v2(posx, posy));
@@ -197,17 +222,23 @@ cc.Class({
      */
     createRoad() {
         //cc.log("create road")
-        var nodeW = this.roadPrefab.data.width;
-        var nodeH = this.roadPrefab.data.height;
-        var roadIndex = Math.floor(cc.winSize.height) / nodeH;
-        for (var i = 1; i <= this.roadNum; i++) {
-            for (var j = 1; j <= roadIndex; j++) {
-                var posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
-                var posy = j % 2 == 0 ? -1 * ((j - 2) / 2) * nodeH : (j / 2 - 0.5) * nodeH;
-                posy += 240
-                var newRoad = cc.instantiate(this.roadPrefab);
+        let nodeW = this.roadPrefab.data.width;
+        let nodeH = this.roadPrefab.data.height;
+        let roadIndex = Math.floor(cc.winSize.height) / nodeH;
+        for (let i = 1; i <= this.roadNum; i++) {
+            for (let j = 0; j < roadIndex; j++) {
+                let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+                // let posy = j % 2 == 0 ? -1 * ((j - 2) / 2) * nodeH : (j / 2 - 0.5) * nodeH;
+                let posy = j * nodeH
+                let newRoad = null;
+                if (this.roadPool.size > 0){
+                    newRoad = this.roadPool.get();
+                }
+                else{
+                    newRoad = cc.instantiate(this.roadPrefab);
+                }
+                newRoad.parent = this.road
                 newRoad.getComponent('road').game = this;
-                this.road.addChild(newRoad);
                 newRoad.setPosition(cc.v2(posx, posy));
             }
         }
@@ -259,10 +290,19 @@ cc.Class({
     },
 
     /**
+     * 回收对象池的对象
+     * @param {道路节点} road 
+     */
+    onRoadKilled(road){
+        this.roadPool.put(road);
+    },
+
+    /**
      * 添加得分
      * @param {添加的分数} score 
      */
     gainScore(score = 0) {
+        return;
         this.score += score;
         this.scoreLabel.string = this.score + "/m";
     },
@@ -271,6 +311,7 @@ cc.Class({
      * 更新速度值
      */
     updateSpeed() {
+        return;
         var speed = Math.floor(99 * (this.playerScript.playerSpeed / this.playerScript.playerMaxSpeed));
         this.speedLabel.string = speed + "m/h"
     },
@@ -296,7 +337,7 @@ cc.Class({
     /**
      * 看广告界面选择是
      */
-    setItem(){
+    setItem() {
         cc.log("set item yes")
         //选择看广告,调用广告接口
 
@@ -309,7 +350,7 @@ cc.Class({
      * 选择否
      */
 
-    cancel(){
+    cancel() {
         cc.log("set item no")
         //不选择看广告
         this.tipsLable.active = false;
