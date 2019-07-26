@@ -2,7 +2,7 @@ cc.Class({
     extends: cc.Component,
 
     properties: {
-        scene1:"helloworld"
+        scene1:"game"
     },
 
     // LIFE-CYCLE CALLBACKS:

@@ -60,6 +60,11 @@ cc.Class({
             type: cc.Prefab,
             tooltip: "考察站预设"
         },
+        goodPrefabArray: {
+            default: [],
+            type: cc.Prefab,
+            tooltip: "道具的预设",
+        },
         //玩家节点数据,用于碰撞判断及当前的坐标判断
         player: {
             default: null,
@@ -120,12 +125,6 @@ cc.Class({
         this.scoreTime = 0;//获取得分的计数
         //开始游戏前初始化所有动作
         this.buttonRestart.active = false;
-        //初始化道路的对象池
-
-        //初始化敌人的对象池
-
-        //初始化道具的对象池
-
     },
 
     onDestroy() {
@@ -137,7 +136,8 @@ cc.Class({
         //生成初始冰道
         this.createRoad();
         this.createNewRoad();
-        //this.createItemPoint()
+        //this.createCross()
+        this.createItemPoint()
         //this.createEnemy();
     },
 
@@ -145,15 +145,17 @@ cc.Class({
 
         var movedis = this.playerScript.playerSpeed * dt;
         this.dis += movedis;
-        if (this.dis >= this.player.height) {
+        if (this.dis >= this.roadPrefab.data.height - movedis) {
             this.diff += 1;
             this.createNewRoad();
             if (this.diff % 150 == 0)
                 this.createItemPoint();
+            else if(this.diff % 60 == 0)
+                this.createGoods();
             else if (this.diff % 50 == 0)
                 this.createScorePoint();
-            else if (this.diff % 40 == 0)
-                this.createCross();
+            // else if (this.diff % 40 == 0)
+            //     this.createCross();
             else if (this.diff % 10 == 0)
                 this.createEnemy();
             this.dis = 0;;
@@ -176,31 +178,24 @@ cc.Class({
         //初始化道路用对象池
         this.roadPool = new cc.NodePool();
         let initCount = (Math.floor(cc.winSize.height) / this.roadPrefab.data.height + 2) * this.roadNum
-        for (let i = 0;i<initCount;i++){
+        for (let i = 0; i < initCount; i++) {
             let newroad = cc.instantiate(this.roadPrefab);
             this.roadPool.put(newroad);
         }
         //初始化敌人用对象池
-
-        //初始化道具用对象池
-    },
-
-    /**
-     * 创建新道路
-     */
-    createNewRoad() {
-
-        let width = Math.floor(cc.winSize.height / 2)
-        let nodeW = this.roadPrefab.data.width;
-        let nodeH = this.roadPrefab.data.height;
-        for (let i = 1; i <= this.roadNum; i++) {
-            let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
-            let posy = width + nodeH / 2 + 160;
-            let newRoad = cc.instantiate(this.roadPrefab);
-            newRoad.getComponent('road').game = this;
-            this.road.addChild(newRoad);
-            newRoad.setPosition(cc.v2(posx, posy));
+        this.enemyPool = new cc.NodePool();
+        let initEnemyCount = 10 //敌人暂时先创建10个
+        for (let i = 0; i < initEnemyCount; i++) {
+            let newEnemy = cc.instantiate(this.enemyPrefab);
+            this.enemyPool.put(newEnemy);
         }
+        //初始化道具用对象池
+        // this.goodsPool = new cc.NodePool();
+        // let initGoodsCount = 9 //一共有9种道具
+        // for (let i = 0; i < initGoodsCount; i++) {
+        //     let newGoods = cc.instantiate(this.goodPrefabArray[i]);
+        //     this.goodsPool.put(newGoods);
+        // }
     },
 
     /**
@@ -213,7 +208,7 @@ cc.Class({
         // }
         //this.cross.active = true;
         this.crossRotation.setRotation(0);
-        this.cross.setPosition(cc.v2(0, 960));
+        this.cross.setPosition(cc.v2(0, 1920));
         this.playerScript.resetTurnState();
     },
 
@@ -222,7 +217,7 @@ cc.Class({
      */
     createRoad() {
         //cc.log("create road")
-        let nodeW = this.roadPrefab.data.width;
+        let nodeW = 300;
         let nodeH = this.roadPrefab.data.height;
         let roadIndex = Math.floor(cc.winSize.height) / nodeH;
         for (let i = 1; i <= this.roadNum; i++) {
@@ -231,10 +226,10 @@ cc.Class({
                 // let posy = j % 2 == 0 ? -1 * ((j - 2) / 2) * nodeH : (j / 2 - 0.5) * nodeH;
                 let posy = j * nodeH
                 let newRoad = null;
-                if (this.roadPool.size > 0){
+                if (this.roadPool.size > 0) {
                     newRoad = this.roadPool.get();
                 }
-                else{
+                else {
                     newRoad = cc.instantiate(this.roadPrefab);
                 }
                 newRoad.parent = this.road
@@ -245,24 +240,75 @@ cc.Class({
     },
 
     /**
+     * 创建新道路
+     */
+    createNewRoad() {
+
+        let nodeW = 300;
+        let index = Math.floor(cc.winSize.height) / this.roadPrefab.data.height;
+        for (let i = 1; i <= this.roadNum; i++) {
+            let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+            let posy = index * this.roadPrefab.data.height - 3;
+            let newRoad = null
+            if (this.roadPool.size > 0) {
+                newRoad = this.roadPool.get();
+            }
+            else {
+                newRoad = cc.instantiate(this.roadPrefab);
+            }
+            newRoad.parent = this.road
+            newRoad.getComponent('road').game = this;
+            newRoad.setPosition(cc.v2(posx, posy));
+        }
+    },
+
+    /**
      * 生成敌人(NPC) 
      */
     createEnemy() {
         //cc.log("create enemy")
 
-        var nodeW = this.roadPrefab.data.width;
+        var nodeW = 300;
         var Index = Math.floor((Math.random() * this.roadNum));
         //var Index = 0
         var posx = 0;
         var posy = 0;
+        var dis = 1920;
         var rot = this.enemy.getRotation() * Math.PI / 180;
-        posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * 720
-        posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * 720
-        cc.log(posx, posy);
-        var newEnemy = cc.instantiate(this.enemyPrefab);
+        posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * dis
+        posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * dis
+        //cc.log(posx, posy);
+        let newEnemy = null;
+        if (this.enemyPool.size > 0) {
+            newEnemy = this.enemyPool.get();
+        }
+        else {
+            newEnemy = cc.instantiate(this.enemyPrefab);
+        }
+        newEnemy.parent = this.enemy;
         newEnemy.getComponent('enemy').game = this;
-        this.enemy.addChild(newEnemy);
+        newEnemy.getComponent('enemy').init();
         newEnemy.setPosition(cc.v2(posx, posy));
+    },
+
+    createGoods(){
+        //cc.log("create goods")
+
+        let nodeW = 300;
+        let Index = Math.floor((Math.random() * this.roadNum));
+        let posx = Index % 2 == 0 ? -1 * ((Index - 1) / 2) * nodeW - (0.5 * nodeW) : (Index / 2) * nodeW - (0.5 * nodeW);
+        let posy = Math.floor(cc.winSize.height);
+        let newGoods = null
+        if (this.goodsPool.size > 0) {
+            newGoods = this.goodsPool.get();
+        }
+        else {
+            let index = Math.floor((Math.random() * this.goodPrefabArray.length))
+            newGoods = cc.instantiate(this.goodPrefabArray[index]);
+        }
+        newGoods.parent = this.road
+        newGoods.getComponent('goods').game = this;
+        newGoods.setPosition(cc.v2(posx, posy));
     },
 
     /**
@@ -290,11 +336,11 @@ cc.Class({
     },
 
     /**
-     * 回收对象池的对象
-     * @param {道路节点} road 
+     * 更改交通状态
      */
-    onRoadKilled(road){
-        this.roadPool.put(road);
+    changeTrafficState(){
+        cc.log("change traffic state")
+
     },
 
     /**
@@ -302,7 +348,6 @@ cc.Class({
      * @param {添加的分数} score 
      */
     gainScore(score = 0) {
-        return;
         this.score += score;
         this.scoreLabel.string = this.score + "/m";
     },
@@ -311,18 +356,8 @@ cc.Class({
      * 更新速度值
      */
     updateSpeed() {
-        return;
         var speed = Math.floor(99 * (this.playerScript.playerSpeed / this.playerScript.playerMaxSpeed));
         this.speedLabel.string = speed + "m/h"
-    },
-
-    /**
-     * 游戏结束
-     */
-    gameOver() {
-        cc.log("game Over")
-        cc.director.pause();
-        this.buttonRestart.active = true;
     },
 
     /**
@@ -355,6 +390,15 @@ cc.Class({
         //不选择看广告
         this.tipsLable.active = false;
         cc.director.resume();
+    },
+
+    /**
+     * 游戏结束
+     */
+    gameOver() {
+        cc.log("game Over")
+        cc.director.pause();
+        this.buttonRestart.active = true;
     },
 
     /**
