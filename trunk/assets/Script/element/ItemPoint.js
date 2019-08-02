@@ -33,6 +33,7 @@ cc.Class({
     update(dt) {
         if (this.getPlayerDistance() < this.pickRadius && this.b_isPicRadius == false) {
             this.game.jumpTotips();
+            this.game.addSupportAni();
             this.b_isPicRadius = true;
         }
 

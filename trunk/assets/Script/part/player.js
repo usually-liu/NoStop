@@ -27,6 +27,16 @@ cc.Class({
             type: cc.Button,
             tooltip: "减速按钮",
         },
+        ItemNodeArray: {
+            default: [],
+            type: cc.Sprite,
+            tooltip: "道具图片数组的节点",
+        },
+        ItemSpritArray: {
+            default: [],
+            type: cc.SpriteFrame,
+            tooltip: "道具图片的数组"
+        },
     },
 
     // LIFE-CYCLE CALLBACKS:
@@ -37,7 +47,12 @@ cc.Class({
         this.b_isAccel = true;//游戏一开始就是加速状态
         this.b_isTurn = false;//玩家是否已经拐弯
         //物品相关的数据初始化
-        this.saveAccel = this.accel;//保存加速度,用户物品减速后的恢复
+        this.haveGoods = [1, 2, 3];//初始化玩家所持有的物品列表
+        this.saveGoodsId = 0;//玩家当前获得的物品ID,用于添加物品
+        this.b_isAddGoods = false;
+        //速度相关的数据初始化
+        let speed = this.accel
+        this.saveAccel = speed;//保存加速度,用户物品减速后的恢复
         this.b_canTurn = true;//能否拐弯/变换车道
         this.b_canSpeedDown = true;//能否进行减速
         //初始化按钮的点击事件
@@ -45,6 +60,7 @@ cc.Class({
     },
 
     onDestroy() {
+        //销毁按钮点击事件
         this.speedButton.node.off(cc.Node.EventType.TOUCH_START, this.setSpeedDown, this);
     },
 
@@ -58,8 +74,8 @@ cc.Class({
         if (this.effectTime > 0) {
             this.effectTime -= dt
             if (this.effectTime <= 0) {
-
                 this.effectTime = 0;
+                this.resetPlayerState();
             }
         }
 
@@ -81,6 +97,16 @@ cc.Class({
     },
 
     /**
+     * 重复播放动画
+     * @param {anim名称} animation 
+     */
+    playAnimationLoop(animation) {
+        let anim = this.getComponent(cc.Animation);
+        let animState = anim.play(animation);
+        animState.wrapMode = cc.WrapMode.Loop;
+    },
+
+    /**
     * 当碰到物品时的逻辑处理
     * 根据物品id决定对应的逻辑
     * 主动物品会加到物品栏中
@@ -88,6 +114,59 @@ cc.Class({
     */
     onPickGoods(goodsId) {
         cc.log("pick item")
+        //拾取的是主动要素
+        if (goodsId > 0 && goodsId < 5) {
+            this.addGoods(goodsId);
+        }
+        //拾取的是被动要素
+        else {
+            switch (goodsId) {
+                case 5: //章鱼:碰撞后5秒内无法加速
+                    this.effectTime = 5;
+                    this.accel = 0;
+                    this.playAnimationLoop('player octopus')
+                    break;
+                case 6: //一坨墨汁:碰撞后5秒内无法减速
+                    this.effectTime = 5;
+                    this.b_canSpeedDown = false;
+                    this.playAnimationLoop('player ink')
+                    break;
+                case 7: //大马哈鱼:碰撞后下一个路口的鲸鱼立刻变更
+                    break;
+                case 8: //冰冻的鱼:碰撞后2秒内玩家无法变更车道
+                    this.effectTime = 2;
+                    this.b_canTurn = false;
+                    this.playAnimationLoop('player Ice')
+                    break;
+                case 9: //乌鸦:碰撞后会随机拿走玩家的一个主动要素
+                    break;
+                default:
+                    break;
+            }
+        }
+    },
+
+    /**
+     * 使用道具
+     */
+    onUseGoods() {
+
+        //判断动画是否正在播放
+        let anim = this.ItemNodeArray[0].getComponent(cc.Animation);
+        let animState1 = anim.getAnimationState('ItemMoveBTN');
+        let animState2 = anim.getAnimationState('ItemMoveNTB');
+        if (animState1.isPlaying == true || animState2.isPlaying == true)
+            return
+
+        cc.log("use Goods")
+
+        let goodsId = this.haveGoods[0];//获取玩家的第一个物品ID
+        //播放使用物品动画
+        if (goodsId == null) {
+            return;
+        }
+
+        //释放对应的物品效果
         switch (goodsId) {
             case 1: //一桶鱼:使用后可以立刻变更下一个路口的鲸鱼状态
                 break;
@@ -97,29 +176,100 @@ cc.Class({
                 break;
             case 4: //紧急停车:使用后可以将速度降低为0,切不会因为速度为0导致游戏失败
                 break;
-            case 5: //章鱼:碰撞后5秒内无法加速
-                this.effectTime = 5;
-                this.accel = 0;
-                break;
-            case 6: //一坨墨汁:碰撞后5秒内无法减速
-                this.effectTime = 5;
-                this.b_canSpeedDown = false;
-                break;
-            case 7: //大马哈鱼:碰撞后下一个路口的鲸鱼立刻变更
-                break;
-            case 8: //冰冻的鱼:碰撞后2秒内玩家无法变更车道
-                this.effectTime = 2;
-                this.b_canTurn = false;
-                break;
-            case 9: //乌鸦:碰撞后会随机拿走玩家的一个主动要素
-                break;
             default:
+                cc.log("error")
                 break;
+        }
+        //播放使用物品的动画
+        anim.play('ItemMoveBTN');
+        this.ItemNodeArray[1].getComponent(cc.Animation).play('ItemMoveSTB');
+        this.ItemNodeArray[2].getComponent(cc.Animation).play('ItemMoveSTS');
+        //移除最前面的物品
+        this.haveGoods.shift();
+
+    },
+
+    /**
+     * 当物品获取完成时
+     */
+    onAddGoodsComp() {
+        cc.log("onAddGoodsComp", this.saveGoodsId)
+        //添加物品到列表中
+        this.haveGoods.push(this.saveGoodsId);
+        //恢复拾取物品状态
+        this.b_isAddGoods = false;
+        //重置保存的物品ID
+        this.saveGoodsId = 0;
+    },
+
+    /**
+     * 当物品使用完成时
+     */
+    onUseGoodsComp() {
+        cc.log("onUseGoodsComp");
+        //重新绘制物品
+        for (let i = 0; i < 3; i++) {
+            if (this.haveGoods[i] == null) {
+                this.ItemNodeArray[i].spriteFrame = null;
+            }
+            else {
+                this.ItemNodeArray[i].spriteFrame = this.ItemSpritArray[this.haveGoods[i] - 1];
+            }
+        }
+        //重新刷新物品图片
+        this.ItemNodeArray[0].getComponent(cc.Animation).play('ItemMoveBComp');
+        //判断是否有新的物品添加,有则添加对应的物品
+        if (this.saveGoodsId != 0) {
+            this.ItemNodeArray[2].getComponent(cc.Animation).play('ItemMoveNTS2');
+        }
+
+    },
+
+    /**
+     * 当物品移动动画完成时
+     */
+    onGoodsMoveComp(index) {
+        this.ItemNodeArray[index].getComponent(cc.Animation).play('ItemMoveS' + index + 'Comp');
+        this.ItemNodeArray[index].node.width = 75;
+        this.ItemNodeArray[index].node.height = 75;
+    },
+
+    /**
+     * 添加物品到使用列表
+     * @param {物品位置} goodsId 
+     */
+    addGoods(goodsId) {
+        cc.log("add Goods")
+        let addSpriteFrame = this.ItemSpritArray[goodsId - 1]
+        //保存已获取的物品ID,用于添加物品后设定物品图标
+        this.saveGoodsId = goodsId;
+        //设定拾取物品状态
+        this.b_isAddGoods = true;
+        //如果没有主动要素
+        if (this.haveGoods.length == 0) {
+            cc.log("play animition")
+            this.ItemNodeArray[0].spriteFrame = addSpriteFrame;
+            this.ItemNodeArray[0].getComponent(cc.Animation).play('ItemMoveNTB')
+        }
+        //如果有1~2个主动要素
+        else if (this.haveGoods.length > 0 && this.haveGoods.length < 3) {
+            this.ItemNodeArray[this.haveGoods.length].spriteFrame = addSpriteFrame;
+            this.ItemNodeArray[this.haveGoods.length].getComponent(cc.Animation).play('ItemMoveNTS' + this.haveGoods.length);
+        }
+        //如果有3个主动要素,去掉最开始的主动要素,将获得的主动要素添加到后面
+        else if (this.haveGoods.length >= 3) {
+            this.ItemNodeArray[2].getComponent(cc.Animation).play('ItemMoveSTS')
+            this.ItemNodeArray[1].getComponent(cc.Animation).play('ItemMoveSTB')
+            this.ItemNodeArray[0].getComponent(cc.Animation).play('ItemMoveBTN')
         }
     },
 
     //左转
     leftMove() {
+        //有冰冻鱼效果下无法变更车道
+        if (this.b_canTurn == false) {
+            return
+        }
         cc.log("left move")
         //判断是拐弯还是变换车道
         if (this.game.cross.y - this.node.y < 480 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x > this.node.x) {
@@ -152,6 +302,10 @@ cc.Class({
 
     //右转
     rightMove() {
+        //有冰冻鱼效果下无法变更车道
+        if (this.b_canTurn == false) {
+            return
+        }
         cc.log("right")
         //判断是拐弯还是变换车道
         if (this.game.cross.y - this.node.y < 480 && this.game.cross.y - this.node.y > 0 && this.game.crossFather.x < this.node.x) {
@@ -185,6 +339,10 @@ cc.Class({
      * 设定减速
      */
     setSpeedDown(event) {
+        //在有章鱼状态下无法减速
+        if (this.b_canSpeedDown == false) {
+            return;
+        }
         cc.log("set speedDown")
         this.b_isAccel = false;//点击按钮后变为减速状态
     },
@@ -207,9 +365,14 @@ cc.Class({
      * 重置玩家状态
      */
     resetPlayerState() {
-        let anim = this.getComponent(cc.Animation);
-        let animState = anim.play('player Move');
-        animState.wrapMode = cc.WrapMode.Loop;
+        cc.log('reset playerState')
+        //重置玩家的状态
+        this.b_canSpeedDown = true;
+        this.b_canTurn = true;
+        let speed = this.saveAccel
+        this.accel = speed
+        //重置玩家的动画
+        playAnimationLoop('player Move')
     },
 
 });

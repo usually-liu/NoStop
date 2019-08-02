@@ -54,6 +54,7 @@ cc.Class({
         if (this.getPlayerDistance() < this.pickRadius && this.b_isPicRadius == false) {
             //添加得分
             this.game.gainScore(10);
+            this.game.addSupportAni();
             this.b_isPicRadius = true;
         }
 

@@ -65,6 +65,16 @@ cc.Class({
             type: cc.Prefab,
             tooltip: "道具的预设",
         },
+        supportNode: {
+            default: null,
+            type: cc.Node,
+            tooltip: "支援动物节点",
+        },
+        supportAniArray: {
+            default: [],
+            type: cc.Prefab,
+            tooltip: "支援动物的预设",
+        },
         //玩家节点数据,用于碰撞判断及当前的坐标判断
         player: {
             default: null,
@@ -119,7 +129,9 @@ cc.Class({
         this.playerScript.road = this.road;
         this.playerScript.point = this.point;
         //初始化当前旋转角度,用于设置敌人的移动方向
-        this.rot = this.enemy.getRotation();
+        this.rot = -this.enemy.angle;
+        //支援动物相关参数
+        this.supportIndex = 0;//当前添加的支援动物节点位置
         //初始化默认的得分数据
         this.score = 0;
         this.scoreTime = 0;//获取得分的计数
@@ -136,8 +148,10 @@ cc.Class({
         //生成初始冰道
         this.createRoad();
         this.createNewRoad();
-        //this.createCross()
-        this.createItemPoint()
+        //this.createScorePoint();
+        //this.createGoods();
+        this.createCross()
+        //this.createItemPoint()
         //this.createEnemy();
     },
 
@@ -150,14 +164,14 @@ cc.Class({
             this.createNewRoad();
             if (this.diff % 150 == 0)
                 this.createItemPoint();
-            else if(this.diff % 60 == 0)
+            else if (this.diff % 60 == 0)
                 this.createGoods();
-            else if (this.diff % 50 == 0)
+            else if (this.diff % 10 == 0)
                 this.createScorePoint();
             // else if (this.diff % 40 == 0)
             //     this.createCross();
-            else if (this.diff % 10 == 0)
-                this.createEnemy();
+            // else if (this.diff % 10 == 0)
+                // this.createEnemy();
             this.dis = 0;;
         }
         //根据地图移动的距离加分
@@ -190,12 +204,12 @@ cc.Class({
             this.enemyPool.put(newEnemy);
         }
         //初始化道具用对象池
-        // this.goodsPool = new cc.NodePool();
-        // let initGoodsCount = 9 //一共有9种道具
-        // for (let i = 0; i < initGoodsCount; i++) {
-        //     let newGoods = cc.instantiate(this.goodPrefabArray[i]);
-        //     this.goodsPool.put(newGoods);
-        // }
+        this.goodsPool = new cc.NodePool();
+        let initGoodsCount = 9 //一共有9种道具
+        for (let i = 0; i < initGoodsCount; i++) {
+            let newGoods = cc.instantiate(this.goodPrefabArray[i]);
+            this.goodsPool.put(newGoods);
+        }
     },
 
     /**
@@ -207,7 +221,7 @@ cc.Class({
         //     return;
         // }
         //this.cross.active = true;
-        this.crossRotation.setRotation(0);
+        this.crossRotation.angle = 0;
         this.cross.setPosition(cc.v2(0, 1920));
         this.playerScript.resetTurnState();
     },
@@ -274,7 +288,7 @@ cc.Class({
         var posx = 0;
         var posy = 0;
         var dis = 1920;
-        var rot = this.enemy.getRotation() * Math.PI / 180;
+        var rot = -1*this.enemy.angle * Math.PI / 180;
         posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * dis
         posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * dis
         //cc.log(posx, posy);
@@ -291,24 +305,27 @@ cc.Class({
         newEnemy.setPosition(cc.v2(posx, posy));
     },
 
-    createGoods(){
+    createGoods() {
         //cc.log("create goods")
 
         let nodeW = 300;
-        let Index = Math.floor((Math.random() * this.roadNum));
-        let posx = Index % 2 == 0 ? -1 * ((Index - 1) / 2) * nodeW - (0.5 * nodeW) : (Index / 2) * nodeW - (0.5 * nodeW);
-        let posy = Math.floor(cc.winSize.height);
-        let newGoods = null
-        if (this.goodsPool.size > 0) {
-            newGoods = this.goodsPool.get();
+        let Index = Math.floor((Math.random() * this.roadNum)) + 1;
+        for (let i = 1; i <= Index; i++) {
+            let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
+            let posy = Math.floor(cc.winSize.height);
+            let newGoods = null
+            if (this.goodsPool.size > 0) {
+                newGoods = this.goodsPool.get();
+            }
+            else {
+                let goodsId = Math.floor((Math.random() * this.goodPrefabArray.length))
+                newGoods = cc.instantiate(this.goodPrefabArray[goodsId]);
+            }
+            newGoods.parent = this.road
+            newGoods.getComponent('goods').game = this;
+            newGoods.setPosition(cc.v2(posx, posy));
         }
-        else {
-            let index = Math.floor((Math.random() * this.goodPrefabArray.length))
-            newGoods = cc.instantiate(this.goodPrefabArray[index]);
-        }
-        newGoods.parent = this.road
-        newGoods.getComponent('goods').game = this;
-        newGoods.setPosition(cc.v2(posx, posy));
+
     },
 
     /**
@@ -336,11 +353,28 @@ cc.Class({
     },
 
     /**
+     * 添加支援动物
+     */
+    addSupportAni() {
+        if (this.supportIndex >= this.supportAniArray.length) {
+            return;
+        }
+        var posx = this.supportIndex % 2 == 0 ? -850 : 850;
+        var posy = 60 + this.supportIndex % 2 == 0 ? this.supportIndex / 2 * 400 : (this.supportIndex - 1) / 2 * 400;
+        var newSupport = cc.instantiate(this.supportAniArray[this.supportIndex]);
+        newSupport.getComponent('support').game = this;
+        this.supportNode.addChild(newSupport);
+        newSupport.setPosition(cc.v2(posx, posy))
+
+        this.supportIndex++;
+    },
+
+    /**
      * 更改交通状态
      */
-    changeTrafficState(){
+    changeTrafficState() {
         cc.log("change traffic state")
-
+        newGoods = cc.instantiate(this.goodPrefabArray[goodsId]);
     },
 
     /**

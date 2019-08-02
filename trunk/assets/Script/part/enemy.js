@@ -14,14 +14,14 @@ cc.Class({
     onLoad() {
     },
 
-    init(){
+    init() {
         if (this.game.diff >= 0) {
             //设置初始随机速度
             var speedRandom = Math.floor((Math.random() * 100)) + 100
             //获取最初始的旋转角度
             this.rot = this.game.rot;
-            this.node.setRotation(-1 * this.rot)
-            cc.log("rotation= " + this.rot)
+            this.node.angle = this.rot
+            cc.log("angle= " + this.rot)
             //根据旋转角度决定最初的移动方向
             this.speedx = -1 * Math.sin(this.rot * Math.PI / 180) * speedRandom
             this.speedy = Math.cos(this.rot * Math.PI / 180) * speedRandom
@@ -72,7 +72,7 @@ cc.Class({
             var posx = 0;
             var posy = 0;
             var playerSpeed = this.game.playerScript.playerSpeed;
-            var parentRotiation = this.node.parent.getRotation();
+            var parentRotiation = -1 * this.node.parent.angle;
             posx = this.speedx + Math.sin(parentRotiation * Math.PI / 180) * playerSpeed;
             posy = this.speedy - Math.cos(parentRotiation * Math.PI / 180) * playerSpeed;
             //cc.log("posx = " + posx + " posy = " + posy + "rot = " + this.rot + " parentrot = " + parentRotiation)

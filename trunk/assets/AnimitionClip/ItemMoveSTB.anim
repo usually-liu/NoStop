@@ -1,0 +1,61 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "ItemMoveSTB",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 0.5833333333333334,
+  "sample": 60,
+  "speed": 2,
+  "wrapMode": 1,
+  "curveData": {
+    "props": {
+      "position": [
+        {
+          "frame": 0,
+          "value": [
+            -58,
+            5,
+            0
+          ]
+        },
+        {
+          "frame": 0.5833333333333334,
+          "value": [
+            110,
+            15,
+            0
+          ]
+        }
+      ],
+      "width": [
+        {
+          "frame": 0.25,
+          "value": 75
+        },
+        {
+          "frame": 0.5833333333333334,
+          "value": 169
+        }
+      ],
+      "height": [
+        {
+          "frame": 0.25,
+          "value": 75
+        },
+        {
+          "frame": 0.5833333333333334,
+          "value": 169
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "frame": 0.5833333333333334,
+      "func": "onGoodsMoveComp",
+      "params": [
+        1
+      ]
+    }
+  ]
+}
