@@ -13,12 +13,12 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "road",
+    "_name": "snowL",
     "_objFlags": 0,
     "_parent": null,
     "_children": [],
     "_active": true,
-    "_level": 1,
+    "_level": 3,
     "_components": [
       {
         "__id__": 2
@@ -40,8 +40,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 365,
-      "height": 494
+      "width": 41,
+      "height": 28
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -50,8 +50,8 @@
     },
     "_position": {
       "__type__": "cc.Vec3",
-      "x": 217,
-      "y": 434,
+      "x": 518.932,
+      "y": -94.341,
       "z": 0
     },
     "_scale": {
@@ -70,8 +70,6 @@
     "_skewY": 0,
     "_is3DNode": false,
     "groupIndex": 0,
-    "_rotationX": 0,
-    "_rotationY": 0,
     "_id": ""
   },
   {
@@ -90,10 +88,10 @@
     "_srcBlendFactor": 770,
     "_dstBlendFactor": 771,
     "_spriteFrame": {
-      "__uuid__": "3bd14260-2fb0-4374-aa4b-9a8ed07c76af"
+      "__uuid__": "8f5b6ddd-cfa6-493d-bdf1-7473d9ef092f"
     },
     "_type": 0,
-    "_sizeMode": 0,
+    "_sizeMode": 1,
     "_fillType": 0,
     "_fillCenter": {
       "__type__": "cc.Vec2",
@@ -122,9 +120,9 @@
       "__id__": 1
     },
     "asset": {
-      "__uuid__": "4f6bb3f1-f23d-4840-9fad-b8b2e001a213"
+      "__id__": 0
     },
-    "fileId": "ea3b/HcAJLHpMOalACnocK",
+    "fileId": "40uGZ9EMJOYKUSYsHDIc6r",
     "sync": false
   }
 ]

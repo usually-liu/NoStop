@@ -46,6 +46,7 @@ cc.Class({
         this.curRoad = 0; //玩家所处的初始道路
         this.b_isAccel = true;//游戏一开始就是加速状态
         this.b_isTurn = false;//玩家是否已经拐弯
+        this.b_IsInvincible = false;//玩家是否处于无敌状态(用于判断是否能碰撞)
         //物品相关的数据初始化
         this.haveGoods = [1, 2, 3];//初始化玩家所持有的物品列表
         this.saveGoodsId = 0;//玩家当前获得的物品ID,用于添加物品
@@ -101,9 +102,9 @@ cc.Class({
      * @param {anim名称} animation 
      */
     playAnimationLoop(animation) {
-        let anim = this.getComponent(cc.Animation);
-        let animState = anim.play(animation);
-        animState.wrapMode = cc.WrapMode.Loop;
+        let anim = this.getComponent(cc.Animation).play(animation);
+        //let animState = anim;
+        //animState.wrapMode = cc.WrapMode.Loop;
     },
 
     /**
@@ -113,6 +114,9 @@ cc.Class({
     * 被动物品则直接使用
     */
     onPickGoods(goodsId) {
+        if (this.b_IsInvincible == true) {
+            return;
+        }
         cc.log("pick item")
         //拾取的是主动要素
         if (goodsId > 0 && goodsId < 5) {
@@ -132,6 +136,7 @@ cc.Class({
                     this.playAnimationLoop('player ink')
                     break;
                 case 7: //大马哈鱼:碰撞后下一个路口的鲸鱼立刻变更
+                    this.game.changeTrafficState();
                     break;
                 case 8: //冰冻的鱼:碰撞后2秒内玩家无法变更车道
                     this.effectTime = 2;
@@ -157,10 +162,8 @@ cc.Class({
         let animState2 = anim.getAnimationState('ItemMoveNTB');
         if (animState1.isPlaying == true || animState2.isPlaying == true)
             return
-
-        cc.log("use Goods")
-
         let goodsId = this.haveGoods[0];//获取玩家的第一个物品ID
+        cc.log("use Goods", goodsId)
         //播放使用物品动画
         if (goodsId == null) {
             return;
@@ -169,12 +172,20 @@ cc.Class({
         //释放对应的物品效果
         switch (goodsId) {
             case 1: //一桶鱼:使用后可以立刻变更下一个路口的鲸鱼状态
+                this.game.changeTrafficState();
                 break;
             case 2: //弹簧:使用后可以越过前方的障碍物,包括风,鲸鱼,动物等
+
+                let jump = cc.scaleTo(0.3, 1.5, 1.5)
+                this.node.runAction(jump);
+                this.effectTime = 2;
+                this.b_IsInvincible = true;
                 break;
             case 3: //加速装置:使用后可以将速度加至最大
+                this.speed = this.playerMaxSpeed;
                 break;
             case 4: //紧急停车:使用后可以将速度降低为0,切不会因为速度为0导致游戏失败
+                this.playerSpeed = 0;
                 break;
             default:
                 cc.log("error")
@@ -369,10 +380,14 @@ cc.Class({
         //重置玩家的状态
         this.b_canSpeedDown = true;
         this.b_canTurn = true;
+        this.b_IsInvincible = false;
+        //重置玩家速度
         let speed = this.saveAccel
         this.accel = speed
         //重置玩家的动画
-        playAnimationLoop('player Move')
+        let reset = cc.scaleTo(0.3, 1.0, 1.0)
+        this.node.runAction(reset);
+        this.playAnimationLoop('player Move')
     },
 
 });

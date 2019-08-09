@@ -94,5 +94,18 @@
       }
     }
   },
-  "events": []
+  "events": [
+    {
+      "frame": 0.3333333333333333,
+      "func": "setPickState",
+      "params": [
+        true
+      ]
+    },
+    {
+      "frame": 1.25,
+      "func": "onWhileComp",
+      "params": []
+    }
+  ]
 }

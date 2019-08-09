@@ -19,6 +19,14 @@ cc.Class({
             default: null,
             type: cc.Prefab,
         },
+        snowLPrefab: {
+            default: null,
+            type: cc.Prefab,
+        },
+        snowRPrefab: {
+            default: null,
+            type: cc.Prefab,
+        },
         //十字路口用节点
         crossFather: {
             default: null,
@@ -40,10 +48,11 @@ cc.Class({
             default: null,
             type: cc.Node,
         },
-        //NPC的预设
+        //预设参数
         enemyPrefab: {
             default: null,
             type: cc.Prefab,
+            tooltip: "敌人的预设",
         },
         point: {
             default: null,
@@ -74,6 +83,21 @@ cc.Class({
             default: [],
             type: cc.Prefab,
             tooltip: "支援动物的预设",
+        },
+        trafficNode: {
+            default: null,
+            type: cc.Node,
+            tooltip: "红绿灯(鲸鱼)的节点",
+        },
+        trafficPrefab: {
+            default: null,
+            type: cc.Prefab,
+            tooltip: "红绿灯(鲸鱼)的预设",
+        },
+        windPrefab: {
+            default: null,
+            type: cc.Prefab,
+            tooltip: "大风的预设",
         },
         //玩家节点数据,用于碰撞判断及当前的坐标判断
         player: {
@@ -122,6 +146,7 @@ cc.Class({
         this.initPool();
         this.diff = 0;//初始化游戏的经过地图数量,用于划分难度
         this.dis = 0;//初始化移动的距离,用于判断道路生成及其他内容
+        this.snowdis = 0;//初始化不可移动区域的距离,用于生成道路边界
         //将节点对象赋予玩家类
         this.playerScript = this.player.getComponent("player");
         this.playerScript.game = this;
@@ -150,9 +175,11 @@ cc.Class({
         this.createNewRoad();
         //this.createScorePoint();
         //this.createGoods();
-        this.createCross()
+        //this.createCross()
         //this.createItemPoint()
         //this.createEnemy();
+        //this.createTraffic();
+        //this.createWind();
     },
 
     update(dt) {
@@ -171,9 +198,15 @@ cc.Class({
             // else if (this.diff % 40 == 0)
             //     this.createCross();
             // else if (this.diff % 10 == 0)
-                // this.createEnemy();
+            // this.createEnemy();
             this.dis = 0;;
         }
+        this.snowdis += movedis;
+        if (this.snowdis >= this.snowLPrefab.data.height - movedis) {
+            this.createNewSnow();
+            this.snowdis = 0;
+        }
+
         //根据地图移动的距离加分
         this.scoreTime += this.playerScript.playerSpeed * dt;
         if (this.scoreTime >= this.player.height * 2) {
@@ -196,6 +229,16 @@ cc.Class({
             let newroad = cc.instantiate(this.roadPrefab);
             this.roadPool.put(newroad);
         }
+        //初始化禁行区域对象池
+        this.snowLPool = new cc.NodePool();
+        this.snowRPool = new cc.NodePool();
+        let initSnowCount = ((Math.floor(cc.winSize.height) / this.snowLPrefab.data.height + 2) * this.roadNum)
+        for (let i = 0; i < initSnowCount; i++) {
+            let newSnowL = cc.instantiate(this.snowLPrefab);
+            let newSnowR = cc.instantiate(this.snowRPrefab);
+            this.snowLPool.put(newSnowL);
+            this.snowRPool.put(newSnowR);
+        }
         //初始化敌人用对象池
         this.enemyPool = new cc.NodePool();
         let initEnemyCount = 10 //敌人暂时先创建10个
@@ -213,6 +256,19 @@ cc.Class({
     },
 
     /**
+     * 清除对象池
+     */
+    clearPool() {
+
+        this.roadPool.clear();
+        this.snowLPool.clear();
+        this.snowRPool.clear();
+        this.enemyPool.clear();
+        this.goodsPool.clear();
+
+    },
+
+    /**
      * 创建十字路口
      */
     createCross() {
@@ -222,7 +278,7 @@ cc.Class({
         // }
         //this.cross.active = true;
         this.crossRotation.angle = 0;
-        this.cross.setPosition(cc.v2(0, 1920));
+        this.cross.setPosition(cc.v2(0, 2414));
         this.playerScript.resetTurnState();
     },
 
@@ -231,13 +287,13 @@ cc.Class({
      */
     createRoad() {
         //cc.log("create road")
+        //创建冰道部分
         let nodeW = 300;
         let nodeH = this.roadPrefab.data.height;
         let roadIndex = Math.floor(cc.winSize.height) / nodeH;
         for (let i = 1; i <= this.roadNum; i++) {
             for (let j = 0; j < roadIndex; j++) {
                 let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
-                // let posy = j % 2 == 0 ? -1 * ((j - 2) / 2) * nodeH : (j / 2 - 0.5) * nodeH;
                 let posy = j * nodeH
                 let newRoad = null;
                 if (this.roadPool.size > 0) {
@@ -250,6 +306,40 @@ cc.Class({
                 newRoad.getComponent('road').game = this;
                 newRoad.setPosition(cc.v2(posx, posy));
             }
+        }
+        //创建雪堆
+        //创建左侧雪堆
+        let nodeSnowW = 525;
+        let nodeSnowH = this.snowLPrefab.data.height;
+        let snowIndex = Math.floor(cc.winSize.height) / nodeSnowH;
+        for (let j = 1; j <= snowIndex; j++) {
+            let posxl = nodeSnowW;
+            let posy = j * nodeSnowH;
+            let newSnowL = null;
+            if (this.snowLPool.size > 0) {
+                newSnowL = this.snowLPool.get();
+            }
+            else {
+                newSnowL = cc.instantiate(this.snowLPrefab);
+            }
+            newSnowL.parent = this.road
+            newSnowL.getComponent('road').game = this;
+            newSnowL.setPosition(cc.v2(posxl, posy));
+        }
+        //创建右侧雪堆
+        for (let j = 1; j <= snowIndex; j++) {
+            let posxr = -1 * nodeSnowW;
+            let posy = j * nodeSnowH;
+            let newSnowR = null;
+            if (this.snowRPool.size > 0) {
+                newSnowR = this.snowRPool.get();
+            }
+            else {
+                newSnowR = cc.instantiate(this.snowRPrefab);
+            }
+            newSnowR.parent = this.road
+            newSnowR.getComponent('road').game = this;
+            newSnowR.setPosition(cc.v2(posxr, posy));
         }
     },
 
@@ -277,6 +367,40 @@ cc.Class({
     },
 
     /**
+     * 创建道路边界
+     */
+    createNewSnow() {
+
+        let index = Math.floor(cc.winSize.height) / this.snowLPrefab.data.height;
+        let posxl = -525
+        let posxr = 525;
+        let posy = index * this.snowLPrefab.data.height - 3
+        //创建左侧雪堆
+        let newSnowL = null;
+        if (this.snowLPool.size > 0) {
+            newSnowL = this.snowLPool.get();
+        }
+        else {
+            newSnowL = cc.instantiate(this.snowLPrefab);
+        }
+        newSnowL.parent = this.road
+        newSnowL.getComponent('road').game = this;
+        newSnowL.setPosition(cc.v2(posxl, posy));
+        //创建右侧雪堆
+        let newSnowR = null;
+        if (this.snowRPool.size > 0) {
+            newSnowR = this.snowRPool.get();
+        }
+        else {
+            newSnowR = cc.instantiate(this.snowRPrefab);
+        }
+        newSnowR.parent = this.road
+        newSnowR.getComponent('road').game = this;
+        newSnowR.setPosition(cc.v2(posxr, posy));
+
+    },
+
+    /**
      * 生成敌人(NPC) 
      */
     createEnemy() {
@@ -288,7 +412,7 @@ cc.Class({
         var posx = 0;
         var posy = 0;
         var dis = 1920;
-        var rot = -1*this.enemy.angle * Math.PI / 180;
+        var rot = -1 * this.enemy.angle * Math.PI / 180;
         posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * dis
         posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * dis
         //cc.log(posx, posy);
@@ -333,7 +457,7 @@ cc.Class({
      */
     createScorePoint() {
         var posx = 0;
-        var posy = 960;
+        var posy = 1920;
         var newScore = cc.instantiate(this.scorePrefab);
         newScore.getComponent('scorePoint').game = this;
         this.point.addChild(newScore);
@@ -345,11 +469,35 @@ cc.Class({
      */
     createItemPoint() {
         var posx = 0;
-        var posy = 960;
+        var posy = 1920;
         var newItem = cc.instantiate(this.itemPrefab);
         newItem.getComponent('ItemPoint').game = this;
         this.point.addChild(newItem);
         newItem.setPosition(cc.v2(posx, posy))
+    },
+
+    /**
+     * 创建鲸鱼(红绿灯)
+     */
+    createTraffic() {
+        var posx = 0;
+        var posy = 1920;
+        var newItem = cc.instantiate(this.trafficPrefab);
+        newItem.getComponent('traffic').game = this;
+        this.trafficNode.addChild(newItem);
+        newItem.setPosition(cc.v2(posx, posy))
+    },
+
+    /**
+     * 创建大风
+     */
+    createWind() {
+        var posx = 0;
+        var posy = 1600;
+        var newWind = cc.instantiate(this.windPrefab);
+        newWind.getComponent('wind').game = this;
+        this.supportNode.addChild(newWind);
+        newWind.setPosition(cc.v2(posx, posy))
     },
 
     /**
@@ -374,7 +522,9 @@ cc.Class({
      */
     changeTrafficState() {
         cc.log("change traffic state")
-        newGoods = cc.instantiate(this.goodPrefabArray[goodsId]);
+        if (this.trafficNode.children[0]) {
+            this.trafficNode.children[0].getComponent('traffic').onUseItem();
+        }
     },
 
     /**
@@ -430,6 +580,9 @@ cc.Class({
      * 游戏结束
      */
     gameOver() {
+        if (this.playerScript.b_IsInvincible == true) {
+            return;
+        }
         cc.log("game Over")
         cc.director.pause();
         this.buttonRestart.active = true;

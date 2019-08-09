@@ -88,5 +88,13 @@
       }
     }
   },
-  "events": []
+  "events": [
+    {
+      "frame": 1,
+      "func": "setPickState",
+      "params": [
+        false
+      ]
+    }
+  ]
 }
