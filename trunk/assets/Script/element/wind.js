@@ -19,6 +19,9 @@ cc.Class({
     },
 
     update(dt) {
+        if(this.game.b_isGameOver == true || this.game.b_isGameStart == false){
+            return; 
+        }
         //玩家与风碰撞后游戏结束
         if (this.getPlayerDistance() < this.pickRadius) {
             this.game.gameOver();

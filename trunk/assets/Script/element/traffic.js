@@ -13,16 +13,24 @@ cc.Class({
     onLoad() {
         this.animTime = 0;
         this.downTime = 0;
+        this.whaleTime = 3;
         this.bCanPick = false;
         this.bIsDownTiming = false;
         this.curanimState = null;
     },
 
     start() {
-        this.curanimState = this.getComponent(cc.Animation).play('whale');
+
+        if (this.game.b_isGuide == false){
+            this.curanimState = this.getComponent(cc.Animation).play('whale');
+        }
+
     },
 
     update(dt) {
+        if(this.game.b_isGameOver == true || this.game.b_isGameStart == false){
+            return; 
+        }
         //玩家与鲸鱼碰撞后游戏结束
         if (this.getPlayerDistance() < this.pickRadius && this.bCanPick == true) {
             this.game.gameOver();
@@ -32,7 +40,7 @@ cc.Class({
 
         //设定每间隔5秒重新播放一次动画
         this.animTime += dt
-        if (this.animTime > 5) {
+        if (this.animTime > this.whaleTime) {
             this.curanimState = this.getComponent(cc.Animation).play('whale');
             this.animTime = 0;
         }

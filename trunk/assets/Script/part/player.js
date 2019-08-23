@@ -2,6 +2,11 @@ cc.Class({
     extends: cc.Component,
 
     properties: {
+        child: {
+            default: null,
+            type: cc.Node,
+            tooltip: "子节点"
+        },
         playerSpeed: {
             default: 1,
             tooltip: "玩家的初始速度",
@@ -37,6 +42,16 @@ cc.Class({
             type: cc.SpriteFrame,
             tooltip: "道具图片的数组"
         },
+        explanNode: {
+            default: null,
+            type: cc.Sprite,
+            tooltip: "说明图片节点"
+        },
+        explanArray: {
+            default: [],
+            type: cc.SpriteFrame,
+            tooltip: "说明文字图片数组"
+        },
     },
 
     // LIFE-CYCLE CALLBACKS:
@@ -47,6 +62,8 @@ cc.Class({
         this.b_isAccel = true;//游戏一开始就是加速状态
         this.b_isTurn = false;//玩家是否已经拐弯
         this.b_IsInvincible = false;//玩家是否处于无敌状态(用于判断是否能碰撞)
+        this.effectTime = 0;//玩家剩余的特效时间
+        this.explanTime = 0;//玩家剩余的物品说明时间
         //物品相关的数据初始化
         this.haveGoods = [1, 2, 3];//初始化玩家所持有的物品列表
         this.saveGoodsId = 0;//玩家当前获得的物品ID,用于添加物品
@@ -69,14 +86,26 @@ cc.Class({
         let anim = this.getComponent(cc.Animation);
         let animState = anim.play('player Move');
         animState.wrapMode = cc.WrapMode.Loop;
+        this.child.active = false;
     },
 
     update(dt) {
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
         if (this.effectTime > 0) {
             this.effectTime -= dt
             if (this.effectTime <= 0) {
                 this.effectTime = 0;
                 this.resetPlayerState();
+            }
+        }
+
+        if (this.explanTime > 0) {
+            this.explanTime -= dt
+            if (this.explanTime <= 0) {
+                this.explanTime = 0;
+                this.explanNode.active = false;
             }
         }
 
@@ -108,6 +137,17 @@ cc.Class({
     },
 
     /**
+     * 增加难度
+     */
+    diffUp() {
+
+        if (this.playerMaxSpeed < 2000) {
+            this.playerMaxSpeed += 200
+        }
+
+    },
+
+    /**
     * 当碰到物品时的逻辑处理
     * 根据物品id决定对应的逻辑
     * 主动物品会加到物品栏中
@@ -118,6 +158,10 @@ cc.Class({
             return;
         }
         cc.log("pick item")
+        //显示物品的说明文字
+        this.explanTime = 3;
+        this.explanNode.spriteFrame = this.explanArray[goodsId - 1];
+        this.explanNode.active = true;
         //拾取的是主动要素
         if (goodsId > 0 && goodsId < 5) {
             this.addGoods(goodsId);
@@ -128,18 +172,20 @@ cc.Class({
                 case 5: //章鱼:碰撞后5秒内无法加速
                     this.effectTime = 5;
                     this.accel = 0;
+                    this.child.active = true;
                     this.playAnimationLoop('player octopus')
                     break;
                 case 6: //一坨墨汁:碰撞后5秒内无法减速
                     this.effectTime = 5;
                     this.b_canSpeedDown = false;
+                    this.child.active = true;
                     this.playAnimationLoop('player ink')
                     break;
                 case 7: //大马哈鱼:碰撞后下一个路口的鲸鱼立刻变更
                     this.game.changeTrafficState();
                     break;
                 case 8: //冰冻的鱼:碰撞后2秒内玩家无法变更车道
-                    this.effectTime = 2;
+                    this.effectTime = 5;
                     this.b_canTurn = false;
                     this.playAnimationLoop('player Ice')
                     break;
@@ -155,6 +201,10 @@ cc.Class({
      * 使用道具
      */
     onUseGoods() {
+
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
 
         //判断动画是否正在播放
         let anim = this.ItemNodeArray[0].getComponent(cc.Animation);
@@ -277,6 +327,10 @@ cc.Class({
 
     //左转
     leftMove() {
+        //游戏结束时无法左转弯
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
         //有冰冻鱼效果下无法变更车道
         if (this.b_canTurn == false) {
             return
@@ -313,6 +367,10 @@ cc.Class({
 
     //右转
     rightMove() {
+        //游戏结束时无法左转弯
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
         //有冰冻鱼效果下无法变更车道
         if (this.b_canTurn == false) {
             return
@@ -388,6 +446,7 @@ cc.Class({
         let reset = cc.scaleTo(0.3, 1.0, 1.0)
         this.node.runAction(reset);
         this.playAnimationLoop('player Move')
+        this.child.active = false;
     },
 
 });

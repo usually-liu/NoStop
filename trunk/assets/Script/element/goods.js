@@ -3,7 +3,7 @@ cc.Class({
 
     properties: {
         pickRadius: 0,//碰撞距离
-        goodsId:{
+        goodsId: {
             default: 0,
             tooltip: "物品ID"
         },
@@ -13,7 +13,7 @@ cc.Class({
 
     // onLoad () {},
 
-    start () {
+    start() {
 
     },
 
@@ -29,14 +29,17 @@ cc.Class({
         return dist;
     },
 
-    update (dt) {
+    update(dt) {
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
         this.node.y -= this.game.playerScript.playerSpeed * dt;
-        if(this.getPlayerDistance() < this.pickRadius){
+        if (this.getPlayerDistance() < this.pickRadius) {
             this.game.playerScript.onPickGoods(this.goodsId);
             this.game.goodsPool.put(this.node)
         }
         if (this.node.y <= -1 * Math.floor(cc.winSize.height) / 2 - 150) {
-            
+
         }
     },
 });

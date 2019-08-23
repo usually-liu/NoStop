@@ -26,7 +26,8 @@ cc.Class({
         var selfToWorldPos = this.node.convertToWorldSpaceAR(cc.v2(0, 0));
         //cc.log(enemyToWorldPos)
         //获取玩家与自身之间的距离
-        var dist = selfToWorldPos.sub(playerPos).mag();
+        // var dist = selfToWorldPos.sub(playerPos).mag();
+        var dist = selfToWorldPos.y - playerPos.y;
         return dist;
     },
 
@@ -45,6 +46,9 @@ cc.Class({
     },
 
     update (dt) {
+        if(this.game.b_isGameOver == true || this.game.b_isGameStart == false){
+            return; 
+        }
         if(this.isOutOfWindow() == true){
             cc.log("destory ScorePoint")
             this.node.destroy();

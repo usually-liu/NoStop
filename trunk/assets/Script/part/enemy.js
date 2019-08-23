@@ -21,7 +21,7 @@ cc.Class({
             //获取最初始的旋转角度
             this.rot = this.game.rot;
             this.node.angle = this.rot
-            cc.log("angle= " + this.rot)
+            //cc.log("angle= " + this.rot)
             //根据旋转角度决定最初的移动方向
             this.speedx = -1 * Math.sin(this.rot * Math.PI / 180) * speedRandom
             this.speedy = Math.cos(this.rot * Math.PI / 180) * speedRandom
@@ -60,6 +60,9 @@ cc.Class({
     },
 
     update(dt) {
+        if(this.game.b_isGameOver == true || this.game.b_isGameStart == false){
+            return; 
+        }
         //玩家与敌人碰撞游戏结束
         if (this.getPlayerDistance() < this.pickRadius) {
             this.game.gameOver();
@@ -83,7 +86,7 @@ cc.Class({
         }
 
         if (this.isOutOfWindow() == true) {
-            cc.log("destroy")
+            cc.log("put enemy")
             this.game.enemyPool.put(this.node)
         }
     },
@@ -96,7 +99,7 @@ cc.Class({
      * 设置拐弯,调整速度
      */
     setTurn() {
-        cc.log("set turn");
+        //cc.log("set turn");
         //this.speedx = -1 * this.speedx;
         //this.speedy = -1 * this.speedy;
     },

@@ -26,13 +26,18 @@ cc.Class({
         var selfToWorldPos = this.node.convertToWorldSpaceAR(cc.v2(0, 0));
         //cc.log(enemyToWorldPos)
         //获取玩家与自身之间的距离
-        var dist = selfToWorldPos.sub(playerPos).mag();
+        // var dist = selfToWorldPos.sub(playerPos).mag();
+        var dist = selfToWorldPos.y - playerPos.y;
         return dist;
     },
 
     update(dt) {
+        if (this.game.b_isGameOver == true || this.game.b_isGameStart == false) {
+            return;
+        }
+
         if (this.getPlayerDistance() < this.pickRadius && this.b_isPicRadius == false) {
-            this.game.jumpTotips();
+            this.game.tipsNode.getCompment("menu").jumpTotips();
             this.game.addSupportAni();
             this.b_isPicRadius = true;
         }

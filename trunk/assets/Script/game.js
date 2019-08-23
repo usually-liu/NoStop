@@ -49,10 +49,15 @@ cc.Class({
             type: cc.Node,
         },
         //预设参数
-        enemyPrefab: {
-            default: null,
+        enemyPrefabArray: {
+            default: [],
             type: cc.Prefab,
             tooltip: "敌人的预设",
+        },
+        tipsPrefab: {
+            default: null,
+            type: cc.Prefab,
+            tooltip: "提示牌预设"
         },
         point: {
             default: null,
@@ -110,9 +115,23 @@ cc.Class({
             type: cc.Node,
         },
 
+        //按钮相关
         buttonRestart: {
             default: null,
             type: cc.Node,
+            tooltip: "重玩按钮"
+        },
+
+        buttonResume: {
+            default: null,
+            type: cc.Node,
+            tooltip: "继续的按钮"
+        },
+
+        buttonRanking: {
+            default: null,
+            type: cc.Node,
+            tooltip: "排行榜按钮",
         },
 
         roadNum: {
@@ -120,28 +139,63 @@ cc.Class({
             tooltip: "初始的冰道数量",
         },
         //lable部分的内容,用于添加玩家分数及玩家的速度
-        scoreLabel: {
-            default: null,
+        numArray: {
+            default: [],
+            tooltip: "数字资源组",
+            type: cc.SpriteFrame,
+        },
+        scoreArray: {
+            default: [],
             tooltip: "玩家的分数",
-            type: cc.Label,
+            type: cc.Sprite,
         },
-        speedLabel: {
+        speedT: {
             default: null,
-            tooltip: "玩家的速度",
-            type: cc.Label,
+            tooltip: "速度十位",
+            type: cc.Sprite,
         },
-        //提示界面,用于提示玩家是否抽奖
-        tipsLable: {
+        speed: {
             default: null,
-            tooltip: "提示界面",
+            tooltip: "速度个位",
+            type: cc.Sprite,
+        },
+        //提示界面节点,用于显示界面是否显示提示内容
+        tipsNode: {
+            default: null,
+            tooltip: "提示节点",
             type: cc.Node,
         },
+        //游戏准备界面,用于展现倒数及游戏的教程界面
+        readyNode: {
+            default: null,
+            tooltip: "准备及提示用节点",
+            type: cc.Node,
+        },
+        //新手引导相关
+        guideNode: {
+            default: null,
+            tooltip: "新手引导节点",
+            type: cc.Node,
+        },
+        //黑色底板,用于显示各种效果
+        blackBoard: {
+            default: null,
+            tooltip: "黑色底板",
+            type: cc.Node,
+        }
     },
 
     // LIFE-CYCLE CALLBACKS:
 
     onLoad() {
-        cc.director.resume()
+        //初始化游戏状态
+        // cc.director.resume()
+        this.b_isGameOver = false;
+        this.b_isGameStart = false;
+        // this.b_isGuide = false;//判断玩家是否处于新手引导状态
+        let guide = cc.sys.localStorage.getItem("isGuide");
+        this.b_isGuide = guide == '0' ? false : true;
+        cc.log(this.b_isGuide);
         //初始化对象池
         this.initPool();
         this.diff = 0;//初始化游戏的经过地图数量,用于划分难度
@@ -153,6 +207,12 @@ cc.Class({
         this.playerScript.enemy = this.enemy;
         this.playerScript.road = this.road;
         this.playerScript.point = this.point;
+        //赋予节点对象类
+        this.readyScript = this.readyNode.getComponent('ready');
+        this.readyScript.game = this;
+        //赋予新手引导对象类
+        this.guideScript = this.guideNode.getComponent('guide');
+        this.guideScript.game = this;
         //初始化当前旋转角度,用于设置敌人的移动方向
         this.rot = -this.enemy.angle;
         //支援动物相关参数
@@ -162,6 +222,7 @@ cc.Class({
         this.scoreTime = 0;//获取得分的计数
         //开始游戏前初始化所有动作
         this.buttonRestart.active = false;
+        this.buttonRanking.active = false;
     },
 
     onDestroy() {
@@ -173,33 +234,72 @@ cc.Class({
         //生成初始冰道
         this.createRoad();
         this.createNewRoad();
-        //this.createScorePoint();
-        //this.createGoods();
-        //this.createCross()
-        //this.createItemPoint()
-        //this.createEnemy();
-        //this.createTraffic();
-        //this.createWind();
+        // this.createScorePoint();
+        // this.createGoods();
+        // this.createCross()
+        // this.createItemPoint()
+        // this.createEnemy();
+        // this.createTraffic();
+        // this.createWind();
+        //播放倒数动画
+        this.readyScript.playGameReady();
     },
 
     update(dt) {
+
+        if (this.b_isGameOver == true || this.b_isGameStart == false) {
+            return;
+        }
 
         var movedis = this.playerScript.playerSpeed * dt;
         this.dis += movedis;
         if (this.dis >= this.roadPrefab.data.height - movedis) {
             this.diff += 1;
             this.createNewRoad();
-            if (this.diff % 150 == 0)
-                this.createItemPoint();
-            else if (this.diff % 60 == 0)
-                this.createGoods();
-            else if (this.diff % 10 == 0)
-                this.createScorePoint();
-            // else if (this.diff % 40 == 0)
-            //     this.createCross();
-            // else if (this.diff % 10 == 0)
-            // this.createEnemy();
-            this.dis = 0;;
+
+            if (this.b_isGuide == true) {
+                if (this.diff == 5) {
+                    this.createCross();
+                    this.guideScript.setGuide(0);
+                }
+                else if (this.diff == 15) {
+                    // this.createTips();
+                    this.guideScript.setGuide(1);
+                }
+                else if (this.diff == 25) {
+                    this.createTraffic();
+                }
+                else if (this.diff == 35) {
+                    this.createGuideGoods(4);
+                    this.guideScript.setGuide(2);
+                }
+                else if (this.diff == 45) {
+                    this.createGuideGoods(2);
+                    this.guideScript.setGuide(3);
+                }
+                else if (this.diff == 55) {
+                    this.createItemPoint();
+                    this.guideScript.setGuide(4);
+                    cc.sys.localStorage.setItem("isGuide", 0);
+                    this.b_isGuide = false;
+                }
+            } else {
+                if (this.diff % 150 == 0)
+                    this.createItemPoint();
+                else if (this.diff % 60 == 0)
+                    this.createGoods();
+                else if (this.diff % 50 == 0)
+                    this.createScorePoint();
+                else if (this.diff % 30 == 0) {
+                    this.createTips(false);
+                }
+                else if (this.diff % 10 == 0) {
+                    // this.createTips(true)
+                    this.createGoods();
+                }
+            }
+
+            this.dis = 0;
         }
         this.snowdis += movedis;
         if (this.snowdis >= this.snowLPrefab.data.height - movedis) {
@@ -213,6 +313,7 @@ cc.Class({
             this.gainScore(1);
             this.scoreTime = 0;
         }
+
         this.updateSpeed()
         this.cross.y -= movedis;
 
@@ -241,10 +342,18 @@ cc.Class({
         }
         //初始化敌人用对象池
         this.enemyPool = new cc.NodePool();
-        let initEnemyCount = 10 //敌人暂时先创建10个
+        let initEnemyCount = 10; //敌人暂时先创建10个
         for (let i = 0; i < initEnemyCount; i++) {
-            let newEnemy = cc.instantiate(this.enemyPrefab);
+            let index = i % 3
+            let newEnemy = cc.instantiate(this.enemyPrefabArray[index]);
             this.enemyPool.put(newEnemy);
+        }
+        //初始化提示牌对象池
+        this.tipsPool = new cc.NodePool();
+        let tipsCount = 10; //初始化敌人创建5个
+        for (let i = 0; i < tipsCount; i++) {
+            let newTips = cc.instantiate(this.tipsPrefab);
+            this.tipsPool.put(newTips);
         }
         //初始化道具用对象池
         this.goodsPool = new cc.NodePool();
@@ -278,7 +387,7 @@ cc.Class({
         // }
         //this.cross.active = true;
         this.crossRotation.angle = 0;
-        this.cross.setPosition(cc.v2(0, 2414));
+        this.cross.setPosition(cc.v2(0, 3348));
         this.playerScript.resetTurnState();
     },
 
@@ -296,7 +405,8 @@ cc.Class({
                 let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
                 let posy = j * nodeH
                 let newRoad = null;
-                if (this.roadPool.size > 0) {
+                if (this.roadPool.size() > 0) {
+                    // cc.log("get road")
                     newRoad = this.roadPool.get();
                 }
                 else {
@@ -304,6 +414,7 @@ cc.Class({
                 }
                 newRoad.parent = this.road
                 newRoad.getComponent('road').game = this;
+                newRoad.getComponent('road').init(1);
                 newRoad.setPosition(cc.v2(posx, posy));
             }
         }
@@ -313,10 +424,10 @@ cc.Class({
         let nodeSnowH = this.snowLPrefab.data.height;
         let snowIndex = Math.floor(cc.winSize.height) / nodeSnowH;
         for (let j = 1; j <= snowIndex; j++) {
-            let posxl = nodeSnowW;
+            let posxl = -1 * nodeSnowW;
             let posy = j * nodeSnowH;
             let newSnowL = null;
-            if (this.snowLPool.size > 0) {
+            if (this.snowLPool.size() > 0) {
                 newSnowL = this.snowLPool.get();
             }
             else {
@@ -324,14 +435,15 @@ cc.Class({
             }
             newSnowL.parent = this.road
             newSnowL.getComponent('road').game = this;
+            newSnowL.getComponent('road').init(2);
             newSnowL.setPosition(cc.v2(posxl, posy));
         }
         //创建右侧雪堆
         for (let j = 1; j <= snowIndex; j++) {
-            let posxr = -1 * nodeSnowW;
+            let posxr = nodeSnowW;
             let posy = j * nodeSnowH;
             let newSnowR = null;
-            if (this.snowRPool.size > 0) {
+            if (this.snowRPool.size() > 0) {
                 newSnowR = this.snowRPool.get();
             }
             else {
@@ -339,6 +451,7 @@ cc.Class({
             }
             newSnowR.parent = this.road
             newSnowR.getComponent('road').game = this;
+            newSnowR.getComponent('road').init(3);
             newSnowR.setPosition(cc.v2(posxr, posy));
         }
     },
@@ -354,7 +467,7 @@ cc.Class({
             let posx = i % 2 == 0 ? -1 * ((i - 1) / 2) * nodeW - (0.5 * nodeW) : (i / 2) * nodeW - (0.5 * nodeW);
             let posy = index * this.roadPrefab.data.height - 3;
             let newRoad = null
-            if (this.roadPool.size > 0) {
+            if (this.roadPool.size() > 0) {
                 newRoad = this.roadPool.get();
             }
             else {
@@ -362,6 +475,7 @@ cc.Class({
             }
             newRoad.parent = this.road
             newRoad.getComponent('road').game = this;
+            newRoad.getComponent('road').init(1);
             newRoad.setPosition(cc.v2(posx, posy));
         }
     },
@@ -377,7 +491,7 @@ cc.Class({
         let posy = index * this.snowLPrefab.data.height - 3
         //创建左侧雪堆
         let newSnowL = null;
-        if (this.snowLPool.size > 0) {
+        if (this.snowLPool.size() > 0) {
             newSnowL = this.snowLPool.get();
         }
         else {
@@ -385,6 +499,7 @@ cc.Class({
         }
         newSnowL.parent = this.road
         newSnowL.getComponent('road').game = this;
+        newSnowL.getComponent('road').init(2);
         newSnowL.setPosition(cc.v2(posxl, posy));
         //创建右侧雪堆
         let newSnowR = null;
@@ -396,38 +511,83 @@ cc.Class({
         }
         newSnowR.parent = this.road
         newSnowR.getComponent('road').game = this;
+        newSnowR.getComponent('road').init(3);
         newSnowR.setPosition(cc.v2(posxr, posy));
+
+    },
+    /**
+     * 生成对应的提示
+     * @param {是否创建敌人} b_isEnemy 
+     */
+    createTips(b_isEnemy) {
+
+        cc.log("create tips")
+        var nodeW = 300;
+        var dis = 900;
+        var Index = Math.floor((Math.random() * this.roadNum));
+        if (b_isEnemy == false) {
+            Index = 0;
+        }
+        var rot = -1 * this.enemy.angle * Math.PI / 180;
+        // cc.log(Index)
+        //创建提示板
+        // let tipsX = Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW
+        // let tipsX = Index % 2 == 0 ? (Index - 1) * nodeW : nodeW
+        // let tipsX = Index == 0 ? 0 : Index == 1 ? nodeW : -1 * nodeW
+        // let tipsY = 900
+        let tipsX = Math.sin(rot) == 0 ? Index == 0 ? 0 : Index == 1 ? nodeW : -1 * nodeW : -1 * Math.sin(rot) * dis
+        let tipsY = Math.cos(rot) == 0 ? Index == 0 ? 0 : Index == 1 ? nodeW : -1 * nodeW : Math.cos(rot) * dis
+        let newTips = null;
+        if (this.tipsPool.size() > 0) {
+            newTips = this.tipsPool.get();
+        }
+        else {
+            newTips = cc.instantiate(this.tipsPrefab);
+        }
+        newTips.parent = this.enemy;
+        newTips.getComponent('tips').game = this;
+        newTips.getComponent('tips').init(b_isEnemy);
+        newTips.getComponent('tips').playBlink(Index);
+        newTips.setPosition(cc.v2(tipsX, tipsY));
 
     },
 
     /**
      * 生成敌人(NPC) 
+     * @param {敌人的标记位置} Index 
      */
-    createEnemy() {
-        //cc.log("create enemy")
+    createEnemy(Index) {
+        //cc.log("create enemy", Index)
 
         var nodeW = 300;
-        var Index = Math.floor((Math.random() * this.roadNum));
         //var Index = 0
         var posx = 0;
         var posy = 0;
         var dis = 1920;
         var rot = -1 * this.enemy.angle * Math.PI / 180;
-        posx = Math.sin(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : -1 * Math.sin(rot) * dis
-        posy = Math.cos(rot) == 0 ? Index % 2 == 0 ? -1 * ((Index - 1) / 2 - 0.5) * nodeW : (Index / 2 - 0.5) * nodeW : Math.cos(rot) * dis
+        posx = Math.sin(rot) == 0 ? Index == 0 ? 0 : Index == 1 ? nodeW : -1 * nodeW : -1 * Math.sin(rot) * dis
+        posy = Math.cos(rot) == 0 ? Index == 0 ? 0 : Index == 1 ? nodeW : -1 * nodeW : Math.cos(rot) * dis
         //cc.log(posx, posy);
+
+        //创建敌人
         let newEnemy = null;
-        if (this.enemyPool.size > 0) {
+        if (this.enemyPool.size() > 0) {
+            cc.log("get enemy")
             newEnemy = this.enemyPool.get();
         }
         else {
-            newEnemy = cc.instantiate(this.enemyPrefab);
+            newEnemy = cc.instantiate(this.enemyPrefabArray[2]);
         }
         newEnemy.parent = this.enemy;
         newEnemy.getComponent('enemy').game = this;
         newEnemy.getComponent('enemy').init();
         newEnemy.setPosition(cc.v2(posx, posy));
+
     },
+
+    /**
+     * 生成道具
+     */
 
     createGoods() {
         //cc.log("create goods")
@@ -449,6 +609,24 @@ cc.Class({
             newGoods.getComponent('goods').game = this;
             newGoods.setPosition(cc.v2(posx, posy));
         }
+
+    },
+
+    /**
+     * 生成新手引导用道具
+     * @param {道具ID} index 
+     */
+    createGuideGoods(goodsId) {
+
+        if (goodsId == null)
+            return
+
+        let posx = 0;
+        let posy = Math.floor(cc.winSize.height);
+        let newGoods = cc.instantiate(this.goodPrefabArray[goodsId]);
+        newGoods.parent = this.road
+        newGoods.getComponent('goods').game = this;
+        newGoods.setPosition(cc.v2(posx, posy));
 
     },
 
@@ -533,47 +711,69 @@ cc.Class({
      */
     gainScore(score = 0) {
         this.score += score;
-        this.scoreLabel.string = this.score + "/m";
+        // this.scoreLabel.string = this.score + "/m";
+        let val = this.score
+        let count = 0;
+        while (val) {
+            if (val < 1) {
+                return;
+            }
+
+            let temp = Math.floor(val % 10)
+            // if (temp < 10) {
+            //     temp = val
+            // }
+            // cc.log(count, temp);
+            this.scoreArray[count].spriteFrame = this.numArray[temp];
+
+            val = val / 10;
+
+            count++;
+        }
     },
 
     /**
      * 更新速度值
      */
     updateSpeed() {
-        var speed = Math.floor(99 * (this.playerScript.playerSpeed / this.playerScript.playerMaxSpeed));
-        this.speedLabel.string = speed + "m/h"
+        let speed = Math.floor(99 * (this.playerScript.playerSpeed / this.playerScript.playerMaxSpeed));
+        let speedTnum = Math.floor(speed / 10);
+        let speedNnum = speed % 10;
+        // cc.log("speedTnum", speedTnum)
+        // cc.log("speedTnum", speedNnum)
+        this.speedT.spriteFrame = this.numArray[speedTnum]
+        this.speed.spriteFrame = this.numArray[speedNnum]
     },
 
     /**
-     * 跳转到是否看广告界面
+     * 暂停游戏
      */
-    jumpTotips() {
-        cc.log("open tips UI")
-        cc.director.pause();
-        this.tipsLable.active = true;
+    pauseGame() {
+        cc.log("game pause")
+        this.b_isGameStart = false;
+        let action = cc.fadeTo(0.3, 120);
+        let fun = cc.callFunc(function () {
+            this.buttonResume.active = true;
+            cc.director.pause();
+        }, this)
+        let seq = cc.sequence(action, fun);
+        this.blackBoard.runAction(seq);
     },
 
     /**
-     * 看广告界面选择是
+     * 重开游戏
      */
-    setItem() {
-        cc.log("set item yes")
-        //选择看广告,调用广告接口
 
-        //重新开始游戏
-        this.tipsLable.active = false;
+    gameResume() {
+        cc.log("game resume")
         cc.director.resume();
-    },
-
-    /**
-     * 选择否
-     */
-
-    cancel() {
-        cc.log("set item no")
-        //不选择看广告
-        this.tipsLable.active = false;
-        cc.director.resume();
+        this.buttonResume.active = false;
+        let action = cc.fadeTo(0.3, 0);
+        let fun = cc.callFunc(function () {
+            this.readyScript.playGameReady();
+        }, this)
+        let seq = cc.sequence(action, fun);
+        this.blackBoard.runAction(seq);
     },
 
     /**
@@ -584,8 +784,29 @@ cc.Class({
             return;
         }
         cc.log("game Over")
-        cc.director.pause();
+        this.b_isGameOver = true;
+        //上传玩家数据
+        let score = this.score.toString();
+        wx.setUserCloudStorage({
+            KVDataList: [{
+                key: 'score',
+                value: score,
+            }],
+            success: res => {
+                console.log("setUserCloudStorage success");
+            },
+            fail: res => {
+                console.log(res);
+            },
+        });
+        //发送消息
+        let openDataContext = wx.getOpenDataContext();
+        openDataContext.postMessage({
+            text: 'setUserCloudStorage',
+        });
+        // cc.director.pause();
         this.buttonRestart.active = true;
+        this.buttonRanking.active = true;
     },
 
     /**
@@ -596,4 +817,11 @@ cc.Class({
         cc.director.loadScene(this.scene)
     },
 
+    /**
+     * 当开始动画播放完毕
+     */
+    onGameReadyComp() {
+        this.readyNode.active = false;
+        this.b_isGameStart = true;
+    },
 });

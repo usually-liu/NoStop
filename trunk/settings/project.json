@@ -8,6 +8,24 @@
   "design-resolution-height": 640,
   "design-resolution-width": 960,
   "excluded-modules": [
+    "Dynamic Atlas",
+    "Label Effect",
+    "ParticleSystem",
+    "TiledMap",
+    "Spine Skeleton",
+    "DragonBones",
+    "MotionStreak",
+    "ProgressBar",
+    "Toggle",
+    "PageView",
+    "PageViewIndicator",
+    "EditBox",
+    "VideoPlayer",
+    "Collider",
+    "Physics",
+    "StudioComponent",
+    "Intersection",
+    "Native Socket",
     "Geom Utils",
     "3D",
     "3D Primitive"
@@ -27,13 +45,13 @@
   "group-list": [
     "default"
   ],
-  "last-module-event-record-time": 1563349344016,
+  "last-module-event-record-time": 1565763986534,
   "simulator-orientation": false,
   "simulator-resolution": {
     "height": 640,
     "width": 960
   },
-  "start-scene": "current",
-  "use-customize-simulator": false,
-  "use-project-simulator-setting": false
+  "use-customize-simulator": true,
+  "use-project-simulator-setting": false,
+  "start-scene": "current"
 }
